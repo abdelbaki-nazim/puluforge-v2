@@ -25,9 +25,15 @@ const StickyHeader = () => {
           Documentation
         </Button>
         {session ? (
-          <div className={styles.authContainer}>
+          <div
+            className={styles.authContainer}
+            data-name={session.user?.name || session.user?.login}
+          >
             <p className={styles.authText}>
-              Welcome, {session.user?.name || session.user?.login}
+              Welcome,{" "}
+              <span className={styles.userName}>
+                {session.user?.name || session.user?.login}
+              </span>
             </p>
             <Button
               themeColor="secondary"
@@ -39,14 +45,16 @@ const StickyHeader = () => {
             </Button>
           </div>
         ) : (
-          <Button
-            themeColor="primary"
-            onClick={() => signIn("github")}
-            size={"large"}
-            className={styles.authButton}
-          >
-            Connect with GitHub
-          </Button>
+          <div className={styles.unsignedContainer}>
+            <Button
+              themeColor="primary"
+              onClick={() => signIn("github")}
+              size={"large"}
+              className={styles.authButton}
+            >
+              Connect with GitHub
+            </Button>
+          </div>
         )}
       </nav>
     </header>

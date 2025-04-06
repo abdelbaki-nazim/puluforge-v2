@@ -45,10 +45,12 @@
   gap: 1rem;
 }
 
-.authContainer {
+.authContainer,
+.unsignedContainer {
   display: flex;
   align-items: center;
   gap: 1rem;
+  position: relative;
 }
 
 .authText {
@@ -56,6 +58,57 @@
   color: #fff;
   margin: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.userName {
+  visibility: hidden;
+}
+
+.authContainer:hover::after {
+  content: attr(data-name);
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #53a2d7;
+  color: #fff;
+  width: 200px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0;
+  animation: bloom 0.2s ease forwards;
+  z-index: 10;
+}
+
+.unsignedContainer:hover::after {
+  content: "This app is in demo mode, you can test it without signing in";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #53a2d7;
+  color: #fff;
+  width: 200px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0;
+  animation: bloom 0.2s ease forwards;
+  z-index: 10;
+}
+
+@keyframes bloom {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
 }
 
 .authButton {
