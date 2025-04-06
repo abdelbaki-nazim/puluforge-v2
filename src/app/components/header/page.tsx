@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Typography } from "@progress/kendo-react-common";
 import { Button } from "@progress/kendo-react-buttons";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -27,9 +26,9 @@ const StickyHeader = () => {
         </Button>
         {session ? (
           <div className={styles.authContainer}>
-            <Typography.p className={styles.authText}>
+            <p className={styles.authText}>
               Welcome, {session.user?.name || session.user?.login}
-            </Typography.p>
+            </p>
             <Button
               themeColor="secondary"
               size={"large"}

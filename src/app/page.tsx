@@ -9,7 +9,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const PuluforgeLandingPage = () => {
-
   return (
     <div className={styles.landingContainer}>
       <header className={`${styles.header} ${styles.fadeIn}`}>
@@ -35,10 +34,6 @@ const PuluforgeLandingPage = () => {
       <FeaturesSection />
 
       <ExtraTextSection />
-
-      <section className={styles.comparisonSection}>
-        <FeatureComparisonCard />
-      </section>
     </div>
   );
 };
@@ -55,7 +50,7 @@ interface Star {
 
 const Hero = (): JSX.Element => {
   const router = useRouter();
-  
+
   useEffect(() => {
     const canvas = document.querySelector(
       `.${styles.starCanvas}`
@@ -247,31 +242,10 @@ const ExtraTextSection = () => {
         intuitive interface, Puluforge empowers your team to innovate without
         the burden of operational overhead.
       </Typography.p>
-      <ul className={styles.benefitsList}>
-        <li className={styles.benefitItem}>
-          <Typography.h3>Efficiency</Typography.h3>
-          <Typography.p>
-            Leverage automation to eliminate repetitive tasks, minimize human
-            error, and accelerate your development cycle.
-          </Typography.p>
-        </li>
-        <li className={styles.benefitItem}>
-          <Typography.h3>Security</Typography.h3>
-          <Typography.p>
-            Implement industry-leading security protocols automatically,
-            ensuring your cloud operations are protected against emerging
-            threats.
-          </Typography.p>
-        </li>
-        <li className={styles.benefitItem}>
-          <Typography.h3>Ease of Use</Typography.h3>
-          <Typography.p>
-            Navigate complex cloud environments with ease through our
-            user-centric design, tailored for both developers and operations
-            teams.
-          </Typography.p>
-        </li>
-      </ul>
+
+      <section className={styles.comparisonSection}>
+        <FeatureComparisonCard />
+      </section>
     </section>
   );
 };
