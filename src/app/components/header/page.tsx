@@ -32,6 +32,7 @@ const StickyHeader = () => {
             </Typography.p>
             <Button
               themeColor="secondary"
+              size={"large"}
               onClick={() => signOut()}
               className={styles.authButton}
             >
@@ -42,6 +43,7 @@ const StickyHeader = () => {
           <Button
             themeColor="primary"
             onClick={() => signIn("github")}
+            size={"large"}
             className={styles.authButton}
           >
             Connect with GitHub
