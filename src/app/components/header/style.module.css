@@ -67,7 +67,7 @@
 .authContainer:hover::after {
   content: attr(data-name);
   position: absolute;
-  top: -40px;
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   background-color: #53a2d7;

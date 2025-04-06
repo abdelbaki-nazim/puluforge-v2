@@ -29,12 +29,6 @@ const StickyHeader = () => {
             className={styles.authContainer}
             data-name={session.user?.name || session.user?.login}
           >
-            <p className={styles.authText}>
-              Welcome,{" "}
-              <span className={styles.userName}>
-                {session.user?.name || session.user?.login}
-              </span>
-            </p>
             <Button
               themeColor="secondary"
               size={"large"}
