@@ -9,5 +9,6 @@ export default function AuthProvider({
   children: React.ReactNode;
   session: any;
 }) {
+  console.log(session);
   return <SessionProvider session={session}>{children}</SessionProvider>;
 }
