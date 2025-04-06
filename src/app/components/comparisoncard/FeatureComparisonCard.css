@@ -1,0 +1,82 @@
+.comparison-card {
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  max-width: 800px;
+  margin: 20px auto;
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comparison-header {
+  background: #f0f0f0;
+  padding: 20px;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.comparison-intro {
+  padding: 0 20px;
+  font-size: 1.1em;
+  margin-bottom: 20px;
+}
+
+.grid-container {
+  overflow-x: auto;
+}
+
+.custom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+}
+
+.custom-grid-row {
+  display: contents;
+}
+
+.custom-grid-cell {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.header-cell {
+  font-weight: bold;
+  background: #e0e0e0;
+}
+
+.puluforge-cell {
+  display: flex;
+  align-items: center;
+}
+
+.puluforge-cell i {
+  margin-right: 5px;
+  color: green;
+}
+
+.full-radius-button {
+  border-radius: 50px;
+  padding: 10px 20px;
+  font-size: 1.2em;
+  transition: transform 0.2s;
+}
+
+.full-radius-button:hover {
+  transform: scale(1.05);
+}
+
+.k-card-actions {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}

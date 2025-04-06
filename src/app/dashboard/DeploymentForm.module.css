@@ -1,0 +1,191 @@
+.formContainer {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 20px;
+  margin-top: 122px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2.5rem;
+  border-radius: 10px;
+  border: 1px solid #e59629ff;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.subtitle {
+  margin: 2rem 0 0 0;
+  font-size: 1.2rem;
+}
+
+/* Stepper and Form Element styles remain unchanged */
+.stepper {
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.stepper .k-stepper-step {
+  color: #333; /* changed from white for better contrast */
+}
+
+.stepper .k-stepper-step.k-step-done {
+  background: #2a5298;
+  color: #fff;
+}
+
+.formElement {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stepContent {
+  padding: 1.5rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.input {
+  background: rgba(223, 198, 162, 0.39);
+  border: 1px solid transparent;
+  padding: 0.5rem !important;
+}
+
+.input:focus {
+  background: rgb(255, 255, 255);
+  border-color: rgba(223, 198, 162, 0.39);
+}
+
+.imageCheckboxGroup {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+}
+
+.imageCheckbox {
+  cursor: pointer;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  transition: background 0.2s ease;
+}
+
+.imageCheckbox:hover {
+  background: rgba(189, 189, 189, 0.395);
+}
+
+.imageCheckbox p {
+  text-align: center;
+  margin-top: 0.5rem;
+  color: #333;
+}
+
+.imageCheckbox.selected {
+  background: rgba(42, 82, 152, 0.2); /* subtle highlight for selected */
+  border-color: #2a5298;
+}
+
+.checkboxImage {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 0.5rem;
+}
+
+.dbSection {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.resourceIconPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.resourceIcon {
+  width: 40px;
+  height: 40px;
+}
+
+.resourcePrompt {
+  font-size: 1.5rem;
+  text-align: center;
+  color: #333;
+  margin: 0;
+}
+
+.deployImage {
+  width: 120px;
+  height: auto;
+  align-self: center;
+  border-radius: 10px;
+  margin-block: 2rem;
+}
+
+.deployText {
+  text-align: center;
+  font-size: 1rem;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+
+.navButton {
+  padding: 10px 25px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.navButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.progressContainer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.progressBar {
+  border-radius: 12px;
+}
+
+.progressBar .k-progressbar-value {
+  background: #2a5298;
+}
+
+.resultContainer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.resultPre {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
