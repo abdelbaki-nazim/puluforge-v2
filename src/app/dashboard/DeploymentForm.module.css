@@ -24,7 +24,6 @@
   font-size: 1.2rem;
 }
 
-/* Stepper and Form Element styles remain unchanged */
 .stepper {
   margin-bottom: 2rem;
   background: rgba(255, 255, 255, 0.1);
@@ -32,7 +31,7 @@
 }
 
 .stepper .k-stepper-step {
-  color: #333; /* changed from white for better contrast */
+  color: #333;
 }
 
 .stepper .k-stepper-step.k-step-done {
@@ -92,7 +91,7 @@
 }
 
 .imageCheckbox.selected {
-  background: rgba(42, 82, 152, 0.2); /* subtle highlight for selected */
+  background: rgba(42, 82, 152, 0.2);
   border-color: #2a5298;
 }
 

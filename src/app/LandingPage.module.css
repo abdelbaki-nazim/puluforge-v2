@@ -221,7 +221,7 @@
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
-  opacity: 0; /* Initially hidden */
+  opacity: 0; 
 }
 
 .featureCard:hover {
@@ -320,7 +320,7 @@
 .benefitItem h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e90ff; /* Vibrant color for emphasis */
+  color: #1e90ff;
   margin-bottom: 10px;
 }
 
