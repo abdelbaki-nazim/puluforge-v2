@@ -1,7 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../../../config/prisma";
 
 declare module "next-auth" {
   interface Session {
@@ -40,7 +38,6 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
@@ -65,18 +62,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          login: user.login,
-          bio: user.bio,
-          company: user.company,
-          location: user.location,
-        },
-      });
-      return true;
-    },
     async session({ session, user }) {
       if (session.user && user) {
         session.user.id = user.id;
