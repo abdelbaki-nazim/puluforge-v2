@@ -13,7 +13,6 @@ import { Typography } from "@progress/kendo-react-common";
 import { ProgressBar } from "@progress/kendo-react-progressbars";
 import { Stepper, StepperChangeEvent } from "@progress/kendo-react-layout";
 import styles from "./DeploymentForm.module.css";
-import Documentation from "../docs/page";
 
 interface FormValues {
   userId: string;
@@ -48,7 +47,6 @@ const ImageCheckbox = ({
 }: ImageCheckboxProps) => {
   const [checked, setChecked] = useState(formRenderProps.valueGetter(name));
 
-  // Sync local state when the form value changes
   useEffect(() => {
     setChecked(formRenderProps.valueGetter(name));
   }, [formRenderProps.valueGetter(name)]);
@@ -334,8 +332,6 @@ const DeploymentForm = () => {
           </div>
         )}
       </div>
-
-      <Documentation showDirectly={false} />
     </>
   );
 };

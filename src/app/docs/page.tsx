@@ -309,13 +309,9 @@ interface DocumentationProps {
   showDirectly?: boolean;
 }
 
-export default function Documentation({
-  showDirectly = true,
-}: DocumentationProps): JSX.Element {
+export default function Documentation({}): JSX.Element {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filteredSteps, setFilteredSteps] = useState<Step[]>(steps);
-  const [isPanelBarVisible, setIsPanelBarVisible] =
-    useState<boolean>(showDirectly);
   const [selectedContent, setSelectedContent] = useState<string>(
     steps[0].content
   );
@@ -350,22 +346,7 @@ export default function Documentation({
 
   return (
     <div className={styles.container}>
-      {!showDirectly && (
-        <>
-          <hr className={styles.divider} />
-          <Button
-            type="button"
-            fillMode={"link"}
-            themeColor={"tertiary"}
-            onClick={() => setIsPanelBarVisible(!isPanelBarVisible)}
-            style={{ textAlign: "center", marginBottom: 30 }}
-          >
-            {isPanelBarVisible ? "Hide Documentation" : "See Documentation"}
-          </Button>
-        </>
-      )}
-
-      {(isPanelBarVisible || showDirectly) && (
+      {
         <div className={styles.docLayout}>
           <div className={styles.leftPanel}>
             <Input
@@ -390,7 +371,7 @@ export default function Documentation({
             dangerouslySetInnerHTML={{ __html: selectedContent }}
           />
         </div>
-      )}
+      }
     </div>
   );
 }
