@@ -9,6 +9,7 @@ import {
   FormElement,
   FormRenderProps,
 } from "@progress/kendo-react-form";
+import { Card, CardTitle, CardBody } from "@progress/kendo-react-layout";
 import { Typography } from "@progress/kendo-react-common";
 import { ProgressBar } from "@progress/kendo-react-progressbars";
 import { Stepper, StepperChangeEvent } from "@progress/kendo-react-layout";
@@ -150,10 +151,21 @@ const DeploymentForm = () => {
     <>
       <div className={styles.formContainer}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Power Up Your Cloud Journey</h1>
+          <Typography.h3 className={styles.title}>
+            Power Up Your Cloud Journey
+          </Typography.h3>
           <Typography.p className={styles.subtitle}>
             Deploy cloud resources faster with Pulumi's smart automation.
           </Typography.p>
+          <Card style={{ width: "100%", marginTop: "32px" }} type="warning">
+            <CardBody>
+              <CardTitle>Shared AWS Account Notice</CardTitle>
+              <p>
+                This app uses a shared free AWS account. Please delete any
+                resources you create after use to help manage costs and limits.
+              </p>
+            </CardBody>
+          </Card>
         </div>
 
         <Stepper
