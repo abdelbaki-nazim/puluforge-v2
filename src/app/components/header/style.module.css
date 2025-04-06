@@ -72,7 +72,7 @@
   transform: translateX(-50%);
   background-color: #53a2d7;
   color: #fff;
-  width: 200px;
+  min-width: 120px;
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 0.8rem;
