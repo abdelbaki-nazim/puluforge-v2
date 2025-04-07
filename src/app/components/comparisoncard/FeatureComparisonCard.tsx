@@ -15,44 +15,38 @@ const features: Feature[] = [
   {
     id: 1,
     feature: "Self-Service Portal",
-    aws: "Manual setup required",
+    aws: "Requires configuration",
     puluforge: "Instant access",
   },
   {
     id: 2,
     feature: "Safe Experimentation per User",
-    aws: "Basic isolation",
+    aws: "Requires careful setup",
     puluforge: "Advanced per-user isolation",
   },
   {
     id: 3,
     feature: "Credential Management",
-    aws: "Manual handling",
+    aws: "Requires configuration",
     puluforge: "Automated and secure",
   },
   {
     id: 4,
     feature: "Multi-User Isolation",
-    aws: "Complex setup",
+    aws: "Can involve detailed configuration",
     puluforge: "Seamless and built-in",
   },
   {
     id: 5,
     feature: "Custom Workflows/Templates",
-    aws: "Manual configuration",
+    aws: "Requires defining templates",
     puluforge: "Effortless customization",
   },
   {
     id: 6,
     feature: "CI/CD Integration",
-    aws: "Extra setup needed",
+    aws: "Requires pipeline configuration",
     puluforge: "Native support",
-  },
-  {
-    id: 7,
-    feature: "Audit, Preview & Rollback",
-    aws: "Limited functionality",
-    puluforge: "Full control",
   },
 ];
 
@@ -61,24 +55,24 @@ const FeatureComparisonCard: React.FC = () => {
     <div className="k-card comparison-card">
       <div className="k-card-header">
         <h4 className="comparison-header">
-          Why Choose Puluforge Over the AWS Console?
+          Why Choose Puluforge Over Direct AWS Console Management?
         </h4>
       </div>
 
       <div className="k-card-body">
         <p className="comparison-intro">
-          Puluforge offers a superior experience for managing your cloud
-          infrastructure. Here’s how we compare to the AWS Console:
+          Puluforge simplifies cloud infrastructure management compared to
+          configuring AWS services directly. Here’s a comparison:
         </p>
         <div className="grid-container">
           <div className="custom-grid">
-            {/* Header Row */}
             <div className="custom-grid-row header-row">
               <div className="custom-grid-cell header-cell">Feature</div>
-              <div className="custom-grid-cell header-cell">AWS Console</div>
+              <div className="custom-grid-cell header-cell">
+                AWS Native Approach
+              </div>
               <div className="custom-grid-cell header-cell">Puluforge</div>
             </div>
-            {/* Data Rows */}
             {features.map((item, index) => (
               <div
                 key={item.id}
