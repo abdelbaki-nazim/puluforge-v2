@@ -433,10 +433,29 @@ const DeploymentForm = () => {
           <Typography.p className={styles.subtitle}>
             Automated resource creation.
           </Typography.p>
-          <Card style={{ width: "100%", marginTop: "32px" }} type="warning">
+          <Card
+            style={{ width: "100%", marginTop: "32px", textAlign: "start" }}
+            type="warning"
+          >
             <CardBody>
-              <CardTitle>Shared Account</CardTitle>
-              <p>Please delete resources after use.</p>
+              <CardTitle>Action Required: Use Your Own AWS Account</CardTitle>
+              <p>
+                This demonstration uses a limited AWS Free Tier account. For
+                reliable testing :
+              </p>
+              <ol style={{ margin: "10px 0 10px 20px", paddingLeft: "0" }}>
+                <li>
+                  <strong>Clone the project repository</strong> to your local
+                  environment.
+                </li>
+                <li>
+                  <strong>Configure your personal AWS credentials</strong>
+                  within the project setup.
+                </li>
+              </ol>
+              <p>
+                Start deploying you <strong>S3 bucket</strong>.
+              </p>
             </CardBody>
           </Card>
         </div>
@@ -628,10 +647,10 @@ const DeploymentForm = () => {
                                 },
                               ],
                             };
-                            handleSubmit(currentValues); 
+                            handleSubmit(currentValues);
                           }
                         }
-                      : handleNext 
+                      : handleNext
                   }
                 >
                   {step === steps.length - 1
