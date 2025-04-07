@@ -343,59 +343,62 @@ Your <code>index.ts</code> conditionally creates AWS resources. For example:
   {
     title: "CI/CD Integration Using GitHub Actions",
     content: `
-This project uses a GitHub Actions workflow to automate the deployment of your AWS resources using Pulumi. The configuration for this automation lives in the <code>.github/workflows/deploy.yml</code> file within your repository.
+This project uses a GitHub Actions workflow, located at <code>.github/workflows/deploy.yml</code>, to automatically deploy your AWS resources using Pulumi.
 
-<strong>How it Works:</strong>
+<strong>How it's Triggered:</strong>
 
+<p>The workflow is configured using GitHub's <code>workflow_dispatch</code> trigger. This type of trigger allows the workflow to be started in two main ways:</p>
 <ul>
-    <li><strong>Manual Trigger:</strong> This workflow doesn't run automatically on code pushes. Instead, you trigger it manually from the "Actions" tab in your GitHub repository. Look for the "Deploy Pulumi Stack" workflow and click "Run workflow".</li>
-    <li><strong>User Inputs:</strong> When you run the workflow, GitHub will ask you for several inputs:
+    <li>Manually, directly from the "Actions" tab in the GitHub repository interface.</li>
+    <li>Programmatically, via a request to the GitHub API.</li>
+</ul>
+<p>In the Puluforge platform, the standard way to initiate an infrastructure deployment is through the application's interface, which then makes an API call to GitHub to start this specific workflow.</p>
+
+<strong>Workflow Inputs:</strong>
+
+<p>Whether triggered manually for testing or via the application's API call, the workflow requires several pieces of information (inputs) to know what to do:</p>
+<ul>
+    <li><code>userId</code>: A unique identifier for the deployment, used to keep resources separate (it becomes part of the Pulumi stack name).</li>
+    <li><code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>: 'true' or 'false' flags indicating whether to create an S3 bucket, RDS database, or EKS cluster, respectively.</li>
+    <li>Optional details: <code>s3BucketName</code>, <code>dbName</code>, <code>dbUsername</code>, <code>dbPassword</code>, <code>clusterName</code>. These are used if you are creating the corresponding resources and want to specify their names or credentials. The API call from the Puluforge app will pass these details based on user selections.</li>
+</ul>
+
+<strong>Workflow Steps:</strong>
+
+<p>Once triggered, the workflow performs these main actions:</p>
+<ol>
+    <li>Checks out the repository code.</li>
+    <li>Sets up the required Node.js environment (version 18).</li>
+    <li>Installs the Pulumi command-line tool (CLI).</li>
+    <li>Goes into the <code>./pulumi</code> directory and installs the necessary Node packages (dependencies) for the Pulumi infrastructure code.</li>
+    <li>Configures and runs Pulumi:
         <ul>
-            <li><code>userId</code>: A unique identifier for the deployment (used to name the Pulumi stack).</li>
-            <li><code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>: Simple 'true' or 'false' choices to decide which resources (S3 bucket, RDS database, EKS cluster) should be created.</li>
-            <li>Optional details like <code>s3BucketName</code>, <code>dbName</code>, <code>dbUsername</code>, <code>dbPassword</code>, <code>clusterName</code> if you are creating those specific resources and want to customize their names/credentials.</li>
+            <li>Logs into the Pulumi service using a secure access token.</li>
+            <li>Initializes or selects a unique Pulumi stack (like <code>your-userId-resources</code>) based on the provided <code>userId</code>.</li>
+            <li>Sets Pulumi configuration values using the inputs passed to the workflow and the secrets stored in GitHub (like AWS credentials).</li>
+            <li>Executes the <code>pulumi up</code> command to create or update the infrastructure in AWS, automatically approving the changes (<code>--skip-preview --yes</code>).</li>
         </ul>
     </li>
-    <li><strong>Workflow Steps:</strong> Once triggered, the workflow performs these main steps:
-        <ol>
-            <li>Checks out your repository code.</li>
-            <li>Sets up the necessary Node.js environment (version 18).</li>
-            <li>Installs the Pulumi command-line tool.</li>
-            <li>Navigates into the <code>./pulumi</code> directory and installs the required Node packages (dependencies) for your Pulumi code.</li>
-            <li>Configures and runs Pulumi:
-                <ul>
-                    <li>It logs into Pulumi using an access token.</li>
-                    <li>It initializes or selects a Pulumi stack named like <code>your-userId-resources</code> to keep your deployments separate.</li>
-                    <li>It sets configuration values for Pulumi based on the inputs you provided and the secrets configured in the repository (like AWS keys).</li>
-                    <li>It runs the <code>pulumi up</code> command, which actually creates or updates the infrastructure in your AWS account based on your Pulumi code and the configuration. It skips the preview step for faster execution.</li>
-                </ul>
-            </li>
-        </ol>
-    </li>
-</ul>
+</ol>
 
 <strong>Required Secrets Setup:</strong>
 
-<p>For the workflow to access your AWS account and the Pulumi service, you need to add the following secrets to your GitHub repository:</p>
-
+<p>For the workflow to securely access your AWS account and the Pulumi service, you must configure the following secrets in your GitHub repository settings:</p>
 <ul>
     <li><code>AWS_ACCESS_KEY_ID</code>: Your AWS access key.</li>
     <li><code>AWS_SECRET_ACCESS_KEY</code>: Your AWS secret key.</li>
-    <li><code>AWS_REGION</code>: The AWS region you want to deploy resources in (e.g., <code>us-east-1</code>).</li>
-    <li><code>PULUMI_ACCESS_TOKEN</code>: Your Pulumi Access Token to interact with the Pulumi service.</li>
+    <li><code>AWS_REGION</code>: The AWS region for deployment (e.g., <code>us-east-1</code>).</li>
+    <li><code>PULUMI_ACCESS_TOKEN</code>: Your Pulumi Access Token for authentication with the Pulumi service.</li>
 </ul>
 
 <p><strong>How to add secrets in GitHub:</strong></p>
 <ol>
-    <li>Go to your repository on GitHub.</li>
-    <li>Click on the "Settings" tab.</li>
-    <li>In the left sidebar, navigate to "Secrets and variables" -> "Actions".</li>
-    <li>Click the "New repository secret" button for each secret listed above.</li>
-    <li>Enter the name exactly as listed (e.g., <code>AWS_ACCESS_KEY_ID</code>) and paste the corresponding value.</li>
-    <li>Click "Add secret". Repeat for all four secrets.</li>
+    <li>Navigate to your repository on GitHub.</li>
+    <li>Go to "Settings" > "Secrets and variables" > "Actions".</li>
+    <li>Click "New repository secret" for each required secret.</li>
+    <li>Enter the exact name (e.g., <code>AWS_ACCESS_KEY_ID</code>) and paste the value.</li>
+    <li>Save each secret. Repeat for all four.</li>
 </ol>
-
-<p>Once these secrets are set up, you can manually trigger the workflow from the Actions tab to deploy your Puluforge infrastructure.</p>
     `,
   },
   {
