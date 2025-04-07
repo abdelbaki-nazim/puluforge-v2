@@ -28,17 +28,18 @@ interface FormValues {
   createS3: boolean;
   createRDS: boolean;
   createEKS: boolean;
+  clusterName: string;
   s3BucketName: string;
   databases: DatabaseConfig[];
 }
 
 interface StoredDeploymentOutput {
-  s3?: { bucketName: string }; 
+  s3?: { bucketName: string };
   rds?: {
-    dbName: string; 
-    username: string; 
+    dbName: string;
+    username: string;
   };
-  eks?: { requested: boolean }; 
+  eks?: { requested: boolean };
 }
 
 interface StoredDeployment {
@@ -51,16 +52,13 @@ interface StoredDeployment {
   requested: { createS3: boolean; createRDS: boolean; createEKS: boolean };
 }
 
-// --- Constants ---
 const steps = [
-  { label: "User Info", icon: "k-i-user" },
-  { label: "Resource Selection", icon: "k-i-gear" },
-  { label: "Configuration", icon: "k-i-wrench" },
-  { label: "Deploy", icon: "k-i-play" },
+  { label: "User Info" },
+  { label: "Resource Selection" },
+  { label: "Configuration" },
+  { label: "Deploy" },
 ];
 const LOCAL_STORAGE_KEY = "cloudDeployments";
-
-// --- Components ---
 
 interface ImageCheckboxProps {
   id: string;
@@ -120,6 +118,7 @@ const DeploymentForm = () => {
     createS3: false,
     createRDS: false,
     createEKS: false,
+    clusterName: "",
     s3BucketName: "",
     databases: [{ dbName: "", username: "", password: "" }],
   });
@@ -205,10 +204,10 @@ const DeploymentForm = () => {
       setDeploymentStatus("queued");
       setIsDeploying(true);
       console.log(`Setting up SSE for runId: ${runId}`);
-  
+
       const es = new EventSource(`/api/logs?runId=${runId}`);
       eventSourceRef.current = es;
-  
+
       es.onopen = () => {
         console.log("SSE Open");
         setDeploymentStatus("running");
@@ -217,7 +216,7 @@ const DeploymentForm = () => {
           block: "start",
         });
       };
-  
+
       es.addEventListener("log", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
@@ -226,7 +225,7 @@ const DeploymentForm = () => {
           console.error("Log parse error", e);
         }
       });
-  
+
       es.addEventListener("status", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
@@ -237,13 +236,13 @@ const DeploymentForm = () => {
           console.error("Status parse error", e);
         }
       });
-  
+
       es.addEventListener("done", (event: MessageEvent) => {
         try {
           const doneData = JSON.parse(event.data);
           console.log("SSE Done:", doneData);
           setDeploymentStatus("completed");
-  
+
           if (doneData.success === true) {
             const stackName = `${submittedData.userId}-resources`;
             const deploymentToStore: StoredDeployment = {
@@ -263,7 +262,7 @@ const DeploymentForm = () => {
                   },
                 }),
                 ...(submittedData.createEKS && {
-                  eks: { requested: true }, 
+                  eks: { requested: true },
                 }),
               },
               requested: {
@@ -278,7 +277,7 @@ const DeploymentForm = () => {
           } else {
             console.log("Deployment failed, not storing.");
           }
-  
+
           setIsDeploying(false);
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
@@ -288,7 +287,7 @@ const DeploymentForm = () => {
           console.error("Done event parse error:", e);
         }
       });
-  
+
       es.addEventListener("error", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
@@ -308,7 +307,7 @@ const DeploymentForm = () => {
           eventSourceRef.current = null;
         }
       });
-  
+
       es.onerror = (error) => {
         if (eventSourceRef.current) {
           console.error("SSE Connection Error:", error);
@@ -340,7 +339,7 @@ const DeploymentForm = () => {
   };
 
   const handleSubmit = async (data: FormValues) => {
-    const finalFormValues = data; 
+    const finalFormValues = data;
 
     setIsDeploying(true);
     setDeploymentResult(null);
@@ -377,7 +376,7 @@ const DeploymentForm = () => {
       if (!responseData?.runId)
         throw new Error("API ok but no runId received.");
 
-      currentRunIdRef.current = responseData.runId; 
+      currentRunIdRef.current = responseData.runId;
       console.log(`Triggered. Run ID: ${responseData.runId}`);
       setDeploymentResult(triggerResult);
       setShowTriggerNotification(true);
@@ -411,37 +410,35 @@ const DeploymentForm = () => {
           } ${!showTriggerNotification ? styles.fixedNotificationHidden : ""}`}
           role="alert"
         >
-          {" "}
           {deploymentResult.error ? (
             <p>
               Trigger Failed: <span>{String(deploymentResult.error)}</span>
             </p>
           ) : (
             <p>
-              Triggered!{" "}
+              Triggered!
               {deploymentResult.runId && (
                 <span>Run ID: {deploymentResult.runId}</span>
               )}
             </p>
-          )}{" "}
+          )}
         </div>
       )}
 
       <div className={styles.formContainer}>
         <div className={styles.header}>
-          {" "}
           <Typography.h3 className={styles.title}>
             Cloud Deployment
-          </Typography.h3>{" "}
+          </Typography.h3>
           <Typography.p className={styles.subtitle}>
             Automated resource creation.
-          </Typography.p>{" "}
+          </Typography.p>
           <Card style={{ width: "100%", marginTop: "32px" }} type="warning">
             <CardBody>
               <CardTitle>Shared Account</CardTitle>
               <p>Please delete resources after use.</p>
             </CardBody>
-          </Card>{" "}
+          </Card>
         </div>
         <Stepper
           value={step}
@@ -451,19 +448,12 @@ const DeploymentForm = () => {
           disabled={isDeploying}
         />
 
-        {/* Kendo Form - No onSubmit, uses renderProps */}
         <Form
           initialValues={initialFormValues}
-          // onStateChange removed
-          // onSubmit removed
-          render={(
-            formRenderProps: FormRenderProps // Has access to formRenderProps
-          ) => (
+          render={(formRenderProps: FormRenderProps) => (
             <FormElement className={styles.formElement}>
-              {/* Step Content - Simplified for brevity */}
               {step === 0 && (
                 <div className={styles.stepContent}>
-                  {" "}
                   <Field
                     name="userId"
                     label="User ID"
@@ -471,41 +461,38 @@ const DeploymentForm = () => {
                     validator={(v) => (!v ? "Required" : "")}
                     required
                     className={styles.input}
-                  />{" "}
+                  />
                 </div>
               )}
               {step === 1 && (
                 <div className={styles.stepContent}>
-                  {" "}
                   <div className={styles.imageCheckboxGroup}>
-                    {" "}
                     <ImageCheckbox
                       id="createS3"
                       name="createS3"
                       label="S3"
                       imageSrc="/images/s3.png"
                       formRenderProps={formRenderProps}
-                    />{" "}
+                    />
                     <ImageCheckbox
                       id="createRDS"
                       name="createRDS"
                       label="RDS"
                       imageSrc="/images/rds.png"
                       formRenderProps={formRenderProps}
-                    />{" "}
+                    />
                     <ImageCheckbox
                       id="createEKS"
                       name="createEKS"
                       label="EKS"
                       imageSrc="/images/eks.png"
                       formRenderProps={formRenderProps}
-                    />{" "}
-                  </div>{" "}
+                    />
+                  </div>
                 </div>
               )}
               {step === 2 && (
                 <div className={styles.stepContent}>
-                  {" "}
                   {formRenderProps.valueGetter("createS3") && (
                     <div>
                       <Field
@@ -517,7 +504,19 @@ const DeploymentForm = () => {
                         className={styles.input}
                       />
                     </div>
-                  )}{" "}
+                  )}
+                  {formRenderProps.valueGetter("createEKS") && (
+                    <div>
+                      <Field
+                        name="clusterName"
+                        label="EKS Cluster Name"
+                        component={Input}
+                        validator={(v) => (!v ? "Required" : "")}
+                        required
+                        className={styles.input}
+                      />
+                    </div>
+                  )}
                   {formRenderProps.valueGetter("createRDS") && (
                     <div>
                       <Field
@@ -527,7 +526,7 @@ const DeploymentForm = () => {
                         validator={(v) => (!v ? "Required" : "")}
                         required
                         className={styles.input}
-                      />{" "}
+                      />
                       <Field
                         name="databases[0].username"
                         label="DB User"
@@ -535,7 +534,7 @@ const DeploymentForm = () => {
                         validator={(v) => (!v ? "Required" : "")}
                         required
                         className={styles.input}
-                      />{" "}
+                      />
                       <Field
                         name="databases[0].password"
                         label="DB Pass"
@@ -548,34 +547,29 @@ const DeploymentForm = () => {
                         className={styles.input}
                       />
                     </div>
-                  )}{" "}
-                  {formRenderProps.valueGetter("createEKS") && (
-                    <div>EKS Config...</div>
-                  )}{" "}
-                  {!formRenderProps.valueGetter("createS3") &&
+                  )}
+                  {!formRenderProps.valueGetter("createEKS") &&
+                    !formRenderProps.valueGetter("createS3") &&
                     !formRenderProps.valueGetter("createRDS") &&
                     !formRenderProps.valueGetter("createEKS") && (
                       <p>Select resource</p>
-                    )}{" "}
+                    )}
                 </div>
               )}
               {step === 3 && (
                 <div className={styles.stepContent}>
-                  {" "}
-                  <Typography.h4>Deploy</Typography.h4>{" "}
+                  <Typography.h4>Deploy</Typography.h4>
                   {(isDeploying ||
                     deploymentStatus === "completed" ||
                     deploymentStatus === "failed") && (
                     <div>
-                      {" "}
                       Status: <strong> {deploymentStatus}...</strong>
                       <ProgressBar value={progress} />
                     </div>
-                  )}{" "}
+                  )}
                 </div>
               )}
 
-              {/* Navigation Buttons */}
               <div className={styles.navigation}>
                 <Button
                   type="button"
@@ -584,43 +578,40 @@ const DeploymentForm = () => {
                   disabled={step === 0 || isDeploying}
                   className={styles.navButton}
                 >
-                  {" "}
-                  Back{" "}
+                  Back
                 </Button>
                 <Button
-                  type="button" // Always button
+                  type="button"
                   themeColor="primary"
                   size="large"
                   disabled={
-                    // Use formRenderProps for checks
                     isDeploying ||
-                    !formRenderProps.valid || // Use validity from renderProps
-                    (step >= 1 && // Use valueGetter from renderProps
+                    !formRenderProps.valid ||
+                    (step >= 1 &&
                       !formRenderProps.valueGetter("createS3") &&
                       !formRenderProps.valueGetter("createRDS") &&
                       !formRenderProps.valueGetter("createEKS"))
                   }
                   className={styles.navButton}
                   onClick={
-                    // Handles Next or Submit
                     step === steps.length - 1
-                      ? // Submit Action: Reconstruct values and call handleSubmit
-                        () => {
+                      ? () => {
                           if (formRenderProps.valid && !isDeploying) {
-                            // Reconstruct the FormValues object here
                             const currentValues: FormValues = {
                               userId: formRenderProps.valueGetter("userId"),
                               createS3:
-                                !!formRenderProps.valueGetter("createS3"), // Ensure boolean
+                                !!formRenderProps.valueGetter("createS3"),
                               createRDS:
                                 !!formRenderProps.valueGetter("createRDS"),
                               createEKS:
                                 !!formRenderProps.valueGetter("createEKS"),
                               s3BucketName:
                                 formRenderProps.valueGetter("s3BucketName") ||
-                                "", // Handle potential null/undefined
+                                "",
+                              clusterName:
+                                formRenderProps.valueGetter("clusterName") ||
+                                "",
                               databases: [
-                                // Reconstruct nested object
                                 {
                                   dbName:
                                     formRenderProps.valueGetter(
@@ -637,10 +628,10 @@ const DeploymentForm = () => {
                                 },
                               ],
                             };
-                            handleSubmit(currentValues); // Call submit handler
+                            handleSubmit(currentValues); 
                           }
                         }
-                      : handleNext // Next Action
+                      : handleNext 
                   }
                 >
                   {step === steps.length - 1
@@ -656,11 +647,15 @@ const DeploymentForm = () => {
 
         {(isDeploying || logOutput || deploymentResult?.error) && (
           <div ref={logContainerRef} className={styles.logsContainer}>
-            {" "}
-            <Typography.h4>Logs</Typography.h4>{" "}
+            <Typography.h4>Logs</Typography.h4>
             <pre className={styles.logsPre}>
-              {logOutput || (isDeploying ? <span className={styles.logSpinner}></span>: "")}
-            </pre>{" "}
+              {logOutput ||
+                (isDeploying ? (
+                  <span className={styles.logSpinner}></span>
+                ) : (
+                  ""
+                ))}
+            </pre>
           </div>
         )}
         <DeployedResourcesList />

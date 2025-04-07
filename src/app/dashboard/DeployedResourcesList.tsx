@@ -5,10 +5,8 @@ import { Button } from "@progress/kendo-react-buttons";
 import { Typography } from "@progress/kendo-react-common";
 import styles from "./DeployedResourcesList.module.css";
 
-// Local storage key for deployments
 const LOCAL_STORAGE_KEY = "cloudDeployments";
 
-// Define interfaces for type safety
 interface StoredDeploymentOutput {
   s3?: { bucketName: string };
   rds?: { dbName: string; username: string };
@@ -20,7 +18,7 @@ interface StoredDeployment {
   userId: string;
   stackName: string;
   timestamp: string;
-  status: "success" | "failed" | "queued"; // Expanded status to match GitHub Actions
+  status: "success" | "failed" | "queued"; 
   outputs: StoredDeploymentOutput;
   requested: { createS3: boolean; createRDS: boolean; createEKS: boolean };
 }
@@ -28,7 +26,6 @@ interface StoredDeployment {
 const DeployedResourcesList: React.FC = () => {
   const [deployments, setDeployments] = useState<StoredDeployment[]>([]);
 
-  // Load deployments from local storage
   const loadDeployments = () => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -51,7 +48,6 @@ const DeployedResourcesList: React.FC = () => {
     }
   };
 
-  // Clear all deployments
   const clearAllDeployments = () => {
     if (
       window.confirm(
@@ -63,7 +59,6 @@ const DeployedResourcesList: React.FC = () => {
     }
   };
 
-  // Format timestamp for display
   const formatTimestamp = (iso: string): string => {
     try {
       return new Date(iso).toLocaleString(undefined, {
@@ -75,7 +70,6 @@ const DeployedResourcesList: React.FC = () => {
     }
   };
 
-  // Load deployments on mount and listen for updates
   useEffect(() => {
     loadDeployments();
     const handleUpdated = () => loadDeployments();

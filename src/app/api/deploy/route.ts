@@ -21,8 +21,15 @@ interface WorkflowRunsResponse {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, createS3, createRDS, createEKS, s3BucketName, databases } =
-      await req.json();
+    const {
+      userId,
+      createS3,
+      createRDS,
+      createEKS,
+      s3BucketName,
+      databases,
+      clusterName,
+    } = await req.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -44,6 +51,7 @@ export async function POST(req: NextRequest) {
       createRDS: String(createRDS),
       createEKS: String(createEKS),
       s3BucketName: s3BucketName || "",
+      clusterName: clusterName || "",
     };
 
     if (firstDatabase) {

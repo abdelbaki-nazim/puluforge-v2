@@ -69,7 +69,7 @@
 .imageCheckboxGroup {
   display: flex;
   gap: 20px;
-  justify-content: center;
+  justify-content: space-evenly;
   margin-top: 20px;
 }
 
@@ -148,7 +148,8 @@
 
 .navigation {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 64px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #eee;
