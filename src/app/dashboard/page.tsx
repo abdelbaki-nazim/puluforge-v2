@@ -8,7 +8,6 @@ import {
   Field,
   FormElement,
   FormRenderProps,
-  // FormState and FormChangeEvent are removed as they don't exist here
 } from "@progress/kendo-react-form";
 import { Card, CardTitle, CardBody } from "@progress/kendo-react-layout";
 import { Typography } from "@progress/kendo-react-common";
@@ -34,21 +33,20 @@ interface FormValues {
 }
 
 interface StoredDeploymentOutput {
-  s3?: { bucketName: string; bucketUrl?: string; region?: string };
+  s3?: { bucketName: string }; 
   rds?: {
-    instanceEndpoint: string;
-    dbName: string;
-    username: string;
-    region?: string;
+    dbName: string; 
+    username: string; 
   };
-  eks?: { clusterName: string; clusterEndpoint?: string; region?: string };
+  eks?: { requested: boolean }; 
 }
 
 interface StoredDeployment {
   runId: string;
   userId: string;
+  stackName: string;
   timestamp: string;
-  status: "success";
+  status: "success" | "failed";
   outputs: StoredDeploymentOutput;
   requested: { createS3: boolean; createRDS: boolean; createEKS: boolean };
 }
@@ -116,7 +114,6 @@ const ImageCheckbox = ({
 };
 
 const DeploymentForm = () => {
-  // --- State ---
   const [step, setStep] = useState(0);
   const [initialFormValues] = useState<FormValues>({
     userId: "",
@@ -126,7 +123,7 @@ const DeploymentForm = () => {
     s3BucketName: "",
     databases: [{ dbName: "", username: "", password: "" }],
   });
-  // Removed currentFormState
+
   const currentRunIdRef = useRef<string | null>(null);
   const [deploymentResult, setDeploymentResult] = useState<any>(null);
   const [isDeploying, setIsDeploying] = useState(false);
@@ -137,16 +134,12 @@ const DeploymentForm = () => {
     string | null
   >(null);
   const [showTriggerNotification, setShowTriggerNotification] = useState(false);
-  // const [refreshDeployments, setRefreshDeployments] = useState(0);
 
-  // --- Refs ---
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // --- Effects ---
   useEffect(() => {
-    // Progress bar effect
     let interval: NodeJS.Timeout | undefined;
     if (
       isDeploying &&
@@ -172,7 +165,6 @@ const DeploymentForm = () => {
   }, [isDeploying, deploymentStatus, deploymentConclusion]);
 
   useEffect(() => {
-    // Log scroll effect
     if (logContainerRef.current && logOutput && isDeploying) {
       const pre = logContainerRef.current.querySelector("pre");
       if (pre) pre.scrollTop = pre.scrollHeight;
@@ -180,7 +172,6 @@ const DeploymentForm = () => {
   }, [logOutput, isDeploying]);
 
   useEffect(() => {
-    // Cleanup effect
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -192,7 +183,6 @@ const DeploymentForm = () => {
     };
   }, []);
 
-  // --- LocalStorage Logic ---
   const saveDeploymentToLocalStorage = (deploymentData: StoredDeployment) => {
     try {
       const existing = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -203,29 +193,22 @@ const DeploymentForm = () => {
       deployments.push(deploymentData);
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(deployments));
       console.log("Deployment saved:", deploymentData);
-      // setRefreshDeployments(prev => prev + 1);
     } catch (error) {
       console.error("Failed to save to localStorage:", error);
     }
   };
 
-  // --- Callbacks ---
-
-  // Removed handleFormStateChange
-
-  // setupEventSource now accepts the submitted data
   const setupEventSource = useCallback(
     (runId: string, submittedData: FormValues) => {
-      // Added submittedData
       if (eventSourceRef.current) eventSourceRef.current.close();
       setLogOutput("");
       setDeploymentStatus("queued");
       setIsDeploying(true);
       console.log(`Setting up SSE for runId: ${runId}`);
-
+  
       const es = new EventSource(`/api/logs?runId=${runId}`);
       eventSourceRef.current = es;
-
+  
       es.onopen = () => {
         console.log("SSE Open");
         setDeploymentStatus("running");
@@ -234,6 +217,7 @@ const DeploymentForm = () => {
           block: "start",
         });
       };
+  
       es.addEventListener("log", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
@@ -242,6 +226,7 @@ const DeploymentForm = () => {
           console.error("Log parse error", e);
         }
       });
+  
       es.addEventListener("status", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
@@ -252,57 +237,59 @@ const DeploymentForm = () => {
           console.error("Status parse error", e);
         }
       });
-
-      // Outputs listener now uses submittedData passed into setupEventSource
-      es.addEventListener("outputs", (event: MessageEvent) => {
-        try {
-          const outputsData = JSON.parse(event.data) as StoredDeploymentOutput;
-          console.log("Received Outputs:", outputsData);
-
-          // Use the 'submittedData' passed into this function
-          const deploymentToStore: StoredDeployment = {
-            runId: currentRunIdRef.current || "unknown-run-id",
-            userId: submittedData.userId, // Use data from argument
-            timestamp: new Date().toISOString(),
-            status: "success",
-            outputs: outputsData,
-            requested: {
-              // Use data from argument
-              createS3: submittedData.createS3,
-              createRDS: submittedData.createRDS,
-              createEKS: submittedData.createEKS,
-            },
-          };
-          saveDeploymentToLocalStorage(deploymentToStore);
-          // Optionally close SSE connection here after getting outputs
-          setIsDeploying(false); // Mark as not deploying anymore
-          if (eventSourceRef.current) {
-            eventSourceRef.current.close();
-            eventSourceRef.current = null;
-          }
-        } catch (e) {
-          console.error("Outputs processing error:", e);
-        }
-      });
-
+  
       es.addEventListener("done", (event: MessageEvent) => {
-        console.log("SSE Done:", event.data);
-        // Check state *after* status event should have potentially set it
-        const finalConclusion = deploymentConclusion; // Read state variable
-        setDeploymentStatus("completed"); // Mark run as completed regardless
-        if (finalConclusion !== "success") {
-          // If not successful (or conclusion unknown), stop deploying and close SSE
+        try {
+          const doneData = JSON.parse(event.data);
+          console.log("SSE Done:", doneData);
+          setDeploymentStatus("completed");
+  
+          if (doneData.success === true) {
+            const stackName = `${submittedData.userId}-resources`;
+            const deploymentToStore: StoredDeployment = {
+              runId: currentRunIdRef.current || "unknown-run-id",
+              userId: submittedData.userId,
+              stackName,
+              timestamp: new Date().toISOString(),
+              status: "success",
+              outputs: {
+                ...(submittedData.createS3 && {
+                  s3: { bucketName: submittedData.s3BucketName },
+                }),
+                ...(submittedData.createRDS && {
+                  rds: {
+                    dbName: submittedData.databases[0].dbName,
+                    username: submittedData.databases[0].username,
+                  },
+                }),
+                ...(submittedData.createEKS && {
+                  eks: { requested: true }, 
+                }),
+              },
+              requested: {
+                createS3: submittedData.createS3,
+                createRDS: submittedData.createRDS,
+                createEKS: submittedData.createEKS,
+              },
+            };
+            console.log("Storing deployment:", deploymentToStore);
+            saveDeploymentToLocalStorage(deploymentToStore);
+            window.dispatchEvent(new Event("deploymentsUpdated"));
+          } else {
+            console.log("Deployment failed, not storing.");
+          }
+  
           setIsDeploying(false);
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
           }
+        } catch (e) {
+          console.error("Done event parse error:", e);
         }
-        // If successful, the "outputs" listener should handle setIsDeploying(false) and closing
       });
-
+  
       es.addEventListener("error", (event: MessageEvent) => {
-        // Backend error event
         try {
           const d = JSON.parse(event.data);
           console.error("SSE BE Error:", d.message);
@@ -321,9 +308,8 @@ const DeploymentForm = () => {
           eventSourceRef.current = null;
         }
       });
-
+  
       es.onerror = (error) => {
-        // Network/connection error
         if (eventSourceRef.current) {
           console.error("SSE Connection Error:", error);
           setLogOutput((p) => p + "\n--- Connection lost ---\n");
@@ -340,8 +326,7 @@ const DeploymentForm = () => {
         }
       };
     },
-    // Remove currentFormState from dependencies, add deploymentConclusion
-    [deploymentConclusion, deploymentStatus] // Keep status/conclusion
+    [deploymentConclusion, deploymentStatus]
   );
 
   const handleStepperChange = (e: StepperChangeEvent) => {
@@ -354,9 +339,8 @@ const DeploymentForm = () => {
     if (step > 0 && !isDeploying) setStep(step - 1);
   };
 
-  // handleSubmit (triggered by manual button click)
   const handleSubmit = async (data: FormValues) => {
-    const finalFormValues = data; // Data comes from the onClick handler
+    const finalFormValues = data; 
 
     setIsDeploying(true);
     setDeploymentResult(null);
@@ -393,7 +377,7 @@ const DeploymentForm = () => {
       if (!responseData?.runId)
         throw new Error("API ok but no runId received.");
 
-      currentRunIdRef.current = responseData.runId; // Store runId
+      currentRunIdRef.current = responseData.runId; 
       console.log(`Triggered. Run ID: ${responseData.runId}`);
       setDeploymentResult(triggerResult);
       setShowTriggerNotification(true);
@@ -402,7 +386,6 @@ const DeploymentForm = () => {
         notificationTimeoutRef.current = null;
       }, 5000);
 
-      // Pass finalFormValues to setupEventSource
       setupEventSource(responseData.runId, finalFormValues);
     } catch (error: any) {
       console.error("Trigger failed:", error);
@@ -419,10 +402,8 @@ const DeploymentForm = () => {
     }
   };
 
-  // --- Render ---
   return (
     <>
-      {/* Notifications */}
       {deploymentResult && (
         <div
           className={`${styles.fixedNotification} ${
@@ -446,7 +427,6 @@ const DeploymentForm = () => {
         </div>
       )}
 
-      {/* Form Layout */}
       <div className={styles.formContainer}>
         <div className={styles.header}>
           {" "}
@@ -674,13 +654,12 @@ const DeploymentForm = () => {
           )}
         />
 
-        {/* Log Output */}
         {(isDeploying || logOutput || deploymentResult?.error) && (
           <div ref={logContainerRef} className={styles.logsContainer}>
             {" "}
             <Typography.h4>Logs</Typography.h4>{" "}
             <pre className={styles.logsPre}>
-              {logOutput || (isDeploying ? "Waiting..." : "")}
+              {logOutput || (isDeploying ? <span className={styles.logSpinner}></span>: "")}
             </pre>{" "}
           </div>
         )}

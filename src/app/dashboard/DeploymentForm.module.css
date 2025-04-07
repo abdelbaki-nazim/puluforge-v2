@@ -1,9 +1,10 @@
 .formContainer {
   max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
-  border-radius: 20px;
-  margin-top: 64px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .header {
@@ -40,21 +41,21 @@
 }
 
 .formElement {
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
 .stepContent {
-  padding: 1.5rem;
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  min-height: 150px;
+  padding-bottom: 20px;
+  margin: 20px 0;
 }
 
 .input {
+  width: 100%;
+  margin-bottom: 15px;
   background: rgba(223, 198, 162, 0.39);
   border: 1px solid transparent;
   padding: 0.5rem !important;
@@ -67,21 +68,23 @@
 
 .imageCheckboxGroup {
   display: flex;
-  justify-content: space-around;
-  gap: 1rem;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .imageCheckbox {
-  cursor: pointer;
-  text-align: center;
-  padding: 1rem;
-  border-radius: 10px;
   border: 2px solid transparent;
-  transition: background 0.2s ease;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+  background-color: #f8f9fa;
 }
 
 .imageCheckbox:hover {
-  background: rgba(189, 189, 189, 0.395);
+  border-color: #adb5bd;
 }
 
 .imageCheckbox p {
@@ -91,20 +94,24 @@
 }
 
 .imageCheckbox.selected {
-  background: rgba(42, 82, 152, 0.2);
-  border-color: #2a5298;
+  border-color: #007bff;
+  transform: scale(1.03);
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
 .checkboxImage {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 0.5rem;
+  max-width: 80px;
+  height: auto;
+  margin-bottom: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dbSection {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed #eee;
 }
 
 .resourceIconPrompt {
@@ -128,27 +135,27 @@
 }
 
 .deployImage {
-  width: 120px;
-  height: auto;
-  align-self: center;
-  border-radius: 10px;
-  margin-block: 2rem;
+  display: block;
+  margin: 20px auto;
+  max-width: 150px;
 }
 
 .deployText {
   text-align: center;
-  font-size: 1rem;
+  margin-bottom: 20px;
+  color: #6c757d;
 }
 
 .navigation {
   display: flex;
-  justify-content: center;
-  gap: 64px;
-  margin-top: 2rem;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 }
 
 .navButton {
-  align-self: center;
+  min-width: 100px;
   padding: 10px 25px;
   border-radius: 25px;
   font-size: 1.1rem;
@@ -161,11 +168,12 @@
 }
 
 .progressContainer {
-  margin-top: 1.5rem;
-  text-align: center;
+  margin-top: 20px;
+  width: 100%;
 }
 
 .progressBar {
+  margin-top: 8px;
   border-radius: 12px;
 }
 
@@ -174,33 +182,21 @@
 }
 
 .resultContainer {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  margin-top: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #e9ecef;
 }
 
 .resultPre {
-  background: #fff;
-  padding: 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #333;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
   white-space: pre-wrap;
   word-wrap: break-word;
-}
-
-.formContainer {
-  padding: 20px;
-}
-
-.stepContent {
-  margin: 20px 0;
-}
-
-.progressContainer {
-  margin-top: 20px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .logViewer {
@@ -213,21 +209,6 @@
   font-size: 12px;
 }
 
-.imageCheckboxGroup {
-  display: flex;
-  gap: 20px;
-}
-
-.imageCheckbox {
-  cursor: pointer;
-}
-
-.selected {
-  border: 2px solid #1e90ff;
-}
-
-/* In DeploymentForm.module.css */
-
 .logsContainer {
   margin-top: 30px;
   border: 1px solid #ccc;
@@ -237,252 +218,113 @@
 }
 
 .logsPre {
-  background-color: #282c34; /* Dark background for logs */
-  color: #abb2bf; /* Light text */
+  background-color: #282c34;
+  color: #abb2bf;
   padding: 15px;
   border-radius: 4px;
-  white-space: pre-wrap; /* Wrap long lines */
-  word-wrap: break-word; /* Break words if necessary */
-  max-height: 400px; /* Limit height */
-  overflow-y: auto; /* Enable vertical scrolling */
-  font-family: monospace; /* Use a fixed-width font */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: monospace;
   font-size: 0.9em;
 }
 
-.progressContainer {
-    margin-top: 20px;
-    width: 100%;
-}
-
-.progressBar {
-    margin-top: 8px;
-}
-
-/* Optional: Style for status text */
-.progressContainer p {
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-/* Adjust other styles as needed */
-.formContainer {
-  /* ... existing styles ... */
-  max-width: 800px; /* Example max width */
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.formElement {
-  padding: 20px 0; /* Add some padding inside the form */
-}
-
-.stepContent {
-  min-height: 150px; /* Give steps some minimum height */
-  padding-bottom: 20px; /* Space before navigation buttons */
-  /* Add specific styles for layout within steps if needed */
-}
-
-.navigation {
-  display: flex;
-  justify-content: space-between; /* Pushes Back and Next apart */
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.navButton {
-   min-width: 100px; /* Give buttons some width */
-}
-
-
-/* Image Checkbox Styles (ensure these exist) */
-.imageCheckboxGroup {
-    display: flex;
-    gap: 20px; /* Space between checkboxes */
-    justify-content: center; /* Center the items */
-    margin-top: 20px;
-}
-
-.imageCheckbox {
-    border: 2px solid transparent;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-    background-color: #f8f9fa;
-}
-
-.imageCheckbox:hover {
-    border-color: #adb5bd; /* Light grey border on hover */
-}
-
-.imageCheckbox.selected {
-    border-color: #007bff; /* Blue border when selected */
-    transform: scale(1.03); /* Slightly enlarge */
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-}
-
-.checkboxImage {
-    max-width: 80px; /* Adjust size as needed */
-    height: auto;
-    margin-bottom: 10px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.input {
-  width: 100%; /* Make inputs full width */
-  margin-bottom: 15px; /* Add space below inputs */
-}
-
-.dbSection {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px dashed #eee; /* Separator */
-}
-
-.deployImage {
-   display: block;
-   margin: 20px auto;
-   max-width: 150px;
-}
-
-.deployText {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #6c757d; /* Grey text */
-}
-
-.resultContainer {
-  margin-top: 30px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 15px;
-  background-color: #e9ecef; /* Light background for result */
-}
-
-.resultPre {
-   background-color: #fff;
-   padding: 10px;
-   border-radius: 4px;
-   white-space: pre-wrap;
-   word-wrap: break-word;
-   max-height: 200px;
-   overflow-y: auto;
-}
-
-/* In DeploymentForm.module.css */
-
-/* Styles for the trigger status box */
 .triggerStatusBox {
-  margin-top: 25px; /* Space above the box */
-  margin-bottom: 20px; /* Space below the box */
-  padding: 15px 20px; /* Padding inside */
-  border-radius: 5px; /* Rounded corners */
+  margin-top: 25px;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  border-radius: 5px;
   border-width: 1px;
   border-style: solid;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Success state styling (green theme) */
-.triggerSuccess {
-  background-color: #e8f5e9; /* Very light green background */
-  border-color: #a5d6a7;    /* Soft green border */
-  color: #1b5e20;          /* Dark green text */
-}
-
-/* Error state styling (red theme) */
-.triggerError {
-  background-color: #ffebee; /* Very light red background */
-  border-color: #ef9a9a;    /* Soft red border */
-  color: #b71c1c;          /* Dark red text */
-}
-
-/* Styling for the main message paragraph inside the box */
-.triggerStatusBox p {
-  margin: 0;
-  font-weight: 600; /* Slightly bolder text */
-  font-size: 1.05em;
-  line-height: 1.4;
-}
-
-/* Styling for additional details (like Run ID or error message) */
-.triggerStatusBox span {
-  font-weight: normal; /* Normal weight for details */
-  font-family: 'Consolas', 'Monaco', monospace; /* Monospace for IDs/errors */
-  font-size: 0.9em;
-  display: block; /* Put details on a new line */
-  margin-top: 8px; /* Space between main message and details */
-  word-break: break-word; /* Break long error messages */
-}
-
-/* In DeploymentForm.module.css */
-
-/* Styles for the fixed notification */
-.fixedNotification {
-  position: fixed; /* Fixed position relative to the viewport */
-  top: 20px;       /* Distance from the top */
-  left: 50%;       /* Start at horizontal center */
-  transform: translateX(-50%); /* Pull back by half its width to truly center */
-  width: auto;     /* Auto width based on content */
-  min-width: 350px;/* Minimum width */
-  max-width: 80%;  /* Maximum width */
-  z-index: 1050;   /* High z-index to appear above other content */
-  padding: 16px 25px; /* Padding inside */
-  border-radius: 8px; /* Rounded corners */
-  border-width: 1px;
-  border-style: solid;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
-  text-align: center;
-  opacity: 1;      /* Start fully visible */
-  /* Smooth transition for appearance/disappearance */
-  transition: opacity 0.4s ease-in-out, top 0.4s ease-in-out;
-  pointer-events: auto; /* Allow interaction if needed */
-}
-
-/* Class added to hide the notification */
-.fixedNotificationHidden {
-  opacity: 0;      /* Fade out */
-  top: -100px;     /* Move above the viewport */
-  pointer-events: none; /* Prevent clicks when hidden */
-}
-
-/* Success state styling (green theme) - Reuse/Ensure these exist */
 .triggerSuccess {
   background-color: #e8f5e9;
   border-color: #a5d6a7;
   color: #1b5e20;
 }
 
-/* Error state styling (red theme) - Reuse/Ensure these exist */
 .triggerError {
   background-color: #ffebee;
   border-color: #ef9a9a;
   color: #b71c1c;
 }
 
-/* Styling for the paragraph inside the fixed notification */
-.fixedNotification p {
+.triggerStatusBox p {
   margin: 0;
   font-weight: 600;
-  font-size: 1.1em; /* Slightly larger font */
+  font-size: 1.05em;
   line-height: 1.4;
 }
 
-/* Styling for the details span inside the fixed notification */
+.triggerStatusBox span {
+  font-weight: normal;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 0.9em;
+  display: block;
+  margin-top: 8px;
+  word-break: break-word;
+}
+
+.fixedNotification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  min-width: 350px;
+  max-width: 80%;
+  z-index: 1050;
+  padding: 16px 25px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out, top 0.4s ease-in-out;
+  pointer-events: auto;
+}
+
+.fixedNotificationHidden {
+  opacity: 0;
+  top: -100px;
+  pointer-events: none;
+}
+
+.fixedNotification p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1em;
+  line-height: 1.4;
+}
+
 .fixedNotification span {
   font-weight: normal;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: "Consolas", "Monaco", monospace;
   font-size: 0.95em;
   display: block;
   margin-top: 6px;
   word-break: break-word;
 }
 
-/* --- Keep your other existing styles for form, logs, etc. --- */
+.logSpinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

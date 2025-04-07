@@ -1,75 +1,110 @@
-/* src/components/DeployedResourcesList/DeployedResourcesList.module.css */
 .listContainer {
-  margin-top: 40px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
+  padding: 30px;
+  background-color: #ffffff;
+  color: #24292e;
+  border-radius: 6px;
+  border: 1px solid #e1e4e8;
+  margin-top: 100px;
 }
 
 .listHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.deploymentCard {
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.cardTitle {
-  font-size: 1.1em;
+.headerTitle {
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 2px !important; /* Override Kendo potentially */
-}
-.cardSubtitle {
-  font-size: 0.85em;
-  color: #6c757d;
-  margin-top: 0;
+  color: #24292e;
 }
 
-.resourceSection {
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #eee;
-}
-.resourceSection:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+.clearButton {
+  background-color: #d73a49 !important;
+  color: #ffffff !important;
 }
 
-.resourceSection strong {
-  display: block;
-  margin-bottom: 5px;
-  color: #343a40;
+.emptyState {
+  text-align: center;
+  padding: 48px;
 }
 
-.resourceSection p {
-  margin: 2px 0;
-  font-size: 0.9em;
-  word-break: break-all; /* Prevent long URLs/endpoints from overflowing */
+.emptyText {
+  color: #6a737d;
+  font-size: 16px;
 }
 
-.resourceSection code {
-  background-color: #e9ecef;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 0.95em;
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
 }
 
-.resourceSection a {
-  color: #007bff;
-  text-decoration: none;
+.deploymentTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
-.resourceSection a:hover {
-  text-decoration: underline;
+
+.deploymentTable th,
+.deploymentTable td {
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.deploymentTable th {
+  color: #6a737d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  background-color: #f6f8fa;
+}
+
+.deploymentTable td {
+  color: #24292e;
+}
+
+.deploymentTable tr:hover {
+  background-color: #f6f8fa;
+}
+
+.statusIcon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+.success {
+  color: #28a745;
+}
+
+.subText {
+  color: #6a737d;
+  font-size: 12px;
+}
+
+.branch {
+  background-color: #e1e4e8;
+  color: #0366d6;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: #6a737d;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+.actionButton:hover {
+  color: #0366d6;
 }
