@@ -15,14 +15,24 @@ const steps = [
   {
     title: "Introduction to Puluforge",
     content: `
-<strong>Puluforge</strong> is a self-service infrastructure management platform designed to democratize the deployment of cloud resources. It leverages Pulumi for Infrastructure as Code (IaC) and a Next.js front-end/API to enable developers to quickly spin up AWS resources such as S3 buckets, RDS databases, and EKS clusters—without deep AWS expertise.
+<strong>Puluforge</strong> is a self-service platform designed to simplify the deployment of cloud infrastructure on AWS. It allows users to easily request and provision resources like S3 buckets, RDS databases, and EKS clusters through a user-friendly interface, reducing the need for deep cloud expertise.
+
+<p>The complete source code for Puluforge is available in the following GitHub repository:</p>
+<p><a href="https://github.com/abdelbaki-nazim/workflows" target="_blank" rel="noopener noreferrer">https://github.com/abdelbaki-nazim/workflows</a></p>
+
+<p>This repository contains three core components working together:</p>
+<ol>
+    <li><strong>The Puluforge Next.js Application:</strong> Provides the web interface (frontend) for users to make requests and the backend API to handle those requests.</li>
+    <li><strong>The Pulumi Project (<code>pulumi/</code> directory):</strong> Contains the Infrastructure as Code (IaC) written in TypeScript, which defines the AWS resources to be created.</li>
+    <li><strong>The GitHub Actions Workflow (<code>.github/workflows/</code>):</strong> Automates the deployment process, acting as the bridge between the Next.js application and the Pulumi code execution.</li>
+</ol>
 
 <strong>Key Benefits:</strong>
 <ul>
-  <li>Simplified AWS resource management.</li>
-  <li>Self-service experience for multiple environments (dev, staging, prod).</li>
-  <li>Infrastructure automation through Pulumi.</li>
-  <li>User-friendly interface with guided steps.</li>
+    <li>Simplified AWS resource provisioning.</li>
+    <li>Self-service experience allowing users to manage their own infrastructure stacks.</li>
+    <li>Automation using Pulumi for consistent and repeatable deployments.</li>
+    <li>Guided infrastructure setup through a web interface.</li>
 </ul>
     `,
   },
@@ -30,105 +40,108 @@ const steps = [
     title: "System Architecture",
     content: `
 Puluforge’s architecture is designed for modularity and scalability. The key components include:
+Puluforge utilizes a modular architecture where different components collaborate to fulfill infrastructure requests. The typical flow involves these key parts:
 
 <ul>
-  <li><strong>Next.js Application:</strong> Hosted on Vercel, providing the front-end and API layer.</li>
-  <li><strong>Pulumi Project:</strong> Contains all IaC code in TypeScript to provision AWS resources.</li>
-  <li><strong>AWS Infrastructure:</strong> Resources such as S3, RDS, and EKS are deployed into AWS.</li>
-  <li><strong>CI/CD & Lambda (Optional):</strong> Additional mechanisms (like GitHub Actions or Lambda functions) are used to trigger long-running Pulumi deployments.</li>
+    <li><strong>Puluforge Next.js Application:</strong> This is the user-facing component. It includes:
+        <ul>
+            <li>A frontend built with Next.js and React, providing the multi-step form for users to specify their desired resources (S3, RDS, EKS) and configuration.</li>
+            <li>Backend API routes (e.g., <code>/api/deploy</code>, <code>/api/logs</code>) that handle form submissions, trigger the deployment process, and stream logs back to the user.</li>
+        </ul>
+    </li>
+    <li><strong>GitHub Actions Workflow (<code>.github/workflows/deploy.yml</code>):</strong> This workflow acts as the central orchestrator for deployments.
+        <ul>
+            <li>It is triggered programmatically by a call from the Next.js application's <code>/api/deploy</code> route.</li>
+            <li>It checks out the code, sets up Node.js and Pulumi, reads secrets (like AWS keys), sets Pulumi configuration based on the user's request, and runs the <code>pulumi up</code> command.</li>
+        </ul>
+    </li>
+    <li><strong>Pulumi Project (<code>pulumi/</code> directory):</strong> This contains the Infrastructure as Code (IaC) definitions written in TypeScript.
+        <ul>
+            <li>The code reads configuration values set by the GitHub Actions workflow.</li>
+            <li>It defines the desired state of the AWS resources (S3 buckets, RDS clusters/instances, EKS clusters) based on that configuration.</li>
+        </ul>
+    </li>
+    <li><strong>AWS Infrastructure:</strong> These are the actual cloud resources provisioned in your AWS account by Pulumi as a result of the deployment process. Puluforge manages these resources within distinct Pulumi stacks, typically named using the user ID (e.g., <code>user123-resources</code>) for isolation.</li>
 </ul>
 
-<strong>Architecture Diagram:</strong>
-<div class="code-block">
-  <code>
-    +----------------+       +----------------+       +---------------+<br/>
-    | Next.js App    |  ---> | Pulumi Project |  ---> | AWS Resources |<br/>
-    | (Vercel Host)  |       |  (IaC Code)    |       | (S3, RDS, EKS)|<br/>
-    +----------------+       +----------------+       +---------------+
-  </code>
-</div>
+<p>This architecture connects a user-friendly web interface to powerful infrastructure automation, using GitHub Actions as the secure link between the application and the cloud environment.</p>
     `,
   },
   {
     title: "Pulumi Project Setup",
     content: `
-To set up the Pulumi project locally:
+The infrastructure code for Puluforge resides within the <code>pulumi/</code> directory of the main repository. After cloning the repository, you'll find the standard structure for a Pulumi TypeScript project:
 
-<strong>1. Initialize the Project:</strong><br/>
-Run:
-<div class="code-block">
-  <code>
-    pulumi new aws-typescript --stack puluforge-dev
-  </code>
-</div>
-
-<strong>2. Project Files:</strong><br/>
-Your project folder includes:
 <ul>
-  <li><code>Pulumi.yaml</code>: Project metadata and default configurations.</li>
-  <li><code>index.ts</code>: Main file with your infrastructure code.</li>
-  <li><code>package.json</code> &amp; <code>package-lock.json</code>: Dependency management.</li>
-  <li><code>node_modules</code>: Installed packages.</li>
-  <li><code>deploy.ts</code>: (Optional) Automation script using Pulumi Automation API.</li>
+    <li><strong><code>index.ts </code> <code> deploy.ts</code>:</strong> This is the heart of the project, containing the TypeScript code that defines your AWS resources (S3, RDS, EKS) using the Pulumi SDK.</li>
+    <li><strong><code>Pulumi.yaml</code>:</strong> Defines project metadata like the project name (<code>puluforge</code>) and the runtime (<code>nodejs</code>). While you can set default configuration values here, Puluforge typically relies on configuration set dynamically during deployment.</li>
+    <li><strong><code>package.json</code> / <code>package-lock.json</code>:</strong> Standard Node.js files managing project dependencies (like <code>@pulumi/pulumi</code>, <code>@pulumi/aws</code>, <code>@pulumi/eks</code>).</li>
+    <li><strong><code>node_modules/</code>:</strong> Contains the installed Node.js packages. This directory is usually generated by running <code>npm install</code> or <code>npm ci</code> within the <code>pulumi/</code> directory.</li>
+    <li><strong><code>tsconfig.json</code>:</strong> Configures the TypeScript compiler options for the project.</li>
 </ul>
 
-<strong>3. Default Configuration:</strong><br/>
-Edit <code>Pulumi.yaml</code> to include defaults (e.g., AWS region):
-<div class="code-block">
-  <code>
-    name: puluforge<br/>
-    runtime: nodejs<br/>
-    config:<br/>
-      aws:region: us-east-1
-  </code>
-</div>
+<p>You typically don't need to run <code>pulumi new</code>; the project is already set up. The primary interaction with this code happens automatically during the deployment workflow triggered by the Next.js application.</p>
     `,
   },
   {
     title: "AWS Credentials and Pulumi Config",
     content: `
-Pulumi stores configuration on a per‑stack basis. To set your AWS credentials, run:
+    Pulumi uses a configuration system to manage settings that can vary between deployments or stacks, including sensitive data like credentials. In Puluforge, this configuration is handled automatically by the GitHub Actions workflow:
 
-<div class="code-block">
-  <code>
-    pulumi config set aws:accessKey AKIAVVZPCLMDKMYCYB67<br/>
-    pulumi config set --secret aws:secretKey Ra2OlOMlWAJY0+fZiXCHyS++05DMZySQbDbh0jRM<br/>
-    pulumi config set aws:region us-east-1
-  </code>
-</div>
-
-In your code, retrieve them like so:
-<div class="code-block">
-  <code>
-    const config = new pulumi.Config();<br/>
-    const awsAccessKey = config.require("aws:accessKey");<br/>
-    const awsSecretKey = config.requireSecret("aws:secretKey");<br/>
-    const awsRegion = config.require("aws:region");
-  </code>
-</div>
-
-This ensures each stack (e.g., <code>puluforge-dev</code>, <code>puluforge-prod</code>) gets its own AWS configuration.
+    <strong>1. Source of Configuration:</strong>
+    <ul>
+        <li><strong>GitHub Secrets:</strong> Sensitive values like AWS access keys (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>) and the Pulumi Access Token are stored securely as GitHub Actions Secrets for the repository.</li>
+        <li><strong>Workflow Inputs:</strong> Non-sensitive values, such as the <code>userId</code>, choices about which resources to create (<code>createS3</code>, etc.), and resource names (<code>s3BucketName</code>, etc.), are passed as inputs when the workflow is triggered by the Next.js API call.</li>
+    </ul>
+    
+    <strong>2. Setting Configuration During Deployment:</strong>
+    <p>The <code>.github/workflows/deploy.yml</code> workflow takes these secrets and inputs and uses the <code>pulumi config set</code> command internally right before deploying. For example, it runs commands like:</p>
+    <div class="code-block"><pre><code>
+    # Inside the GitHub Actions workflow run:
+    pulumi config set awsAccessKey $AWS_ACCESS_KEY_ID
+    pulumi config set awsSecretKey $AWS_SECRET_ACCESS_KEY --secret
+    pulumi config set awsRegion $AWS_REGION
+    pulumi config set createS3 $CREATE_S3 
+    # ... and so on for other inputs/secrets
+    </code></pre></div>
+    <p>This sets the configuration specifically for the stack being deployed (e.g., <code>user123-resources</code>).</p>
+    
+    <strong>3. Accessing Configuration in Code:</strong>
+    <p>The <code>pulumi/index.ts</code> code then reads this configuration using the <code>pulumi.Config</code> class to access AWS keys, determine which resources to create, and get specific names or settings:</p>
+    <div class="code-block"><pre><code>
+    const config = new pulumi.Config();
+    
+    // Example: Reading AWS credentials (set by the workflow)
+    const awsAccessKey = config.require("awsAccessKey");
+    const awsSecretKey = config.requireSecret("awsSecretKey");
+    const awsRegion = config.require("awsRegion");
+    
+    // Example: Checking if S3 creation was requested
+    const shouldCreateS3 = config.getBoolean("createS3"); 
+    if (shouldCreateS3 === true) {
+      // Read S3 specific config or use defaults
+      const bucketName = config.get("s3BucketName") || "default-s3-bucket";
+      // ... create S3 bucket ...
+    }
+    </code></pre></div>
+    
+    <p>This approach ensures that each deployment uses the correct settings provided by the user via the Puluforge UI and keeps sensitive credentials secure, managed by the automated workflow rather than manual user commands.</p>
     `,
   },
   {
     title: "Infrastructure Code (S3, RDS, EKS)",
-    content: 
-  `
+    content: `
   The core logic for defining the cloud infrastructure resides in the <code>pulumi/index.ts</code> file. This TypeScript code uses the Pulumi SDK to declare the desired state of resources in AWS.
-
 <strong>Reading Configuration</strong>
 <p>The program starts by accessing configuration values passed to it during the deployment (typically via the GitHub Actions workflow). This includes AWS credentials and flags indicating which resources the user chose to create.</p>
 <div class="code-block"><pre><code>
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 // ... other imports
-
 const config = new pulumi.Config();
-
 const awsAccessKey = config.require("awsAccessKey");
 const awsSecretKey = config.requireSecret("awsSecretKey");
 const awsRegion = config.require("awsRegion");
-
 // Create an AWS provider instance to ensure resources use these specific credentials/region
 const awsProvider = new aws.Provider("aws-provider", {
   accessKey: awsAccessKey,
@@ -136,15 +149,12 @@ const awsProvider = new aws.Provider("aws-provider", {
   region: awsRegion as aws.Region,
 });
 </code></pre></div>
-
 <strong>Conditional Resource Creation</strong>
 <p>The code uses the configuration values (<code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>) to conditionally define resources. If a flag is set to <code>true</code>, the corresponding block of code executes, creating that resource.</p>
-
 <strong>S3 Bucket Definition</strong>
 <p>If <code>createS3</code> is true, an S3 bucket is created. The bucket name is taken from the configuration (<code>s3BucketName</code>) if provided, otherwise, a default name is used.</p>
 <div class="code-block"><pre><code>
 let s3BucketOutput: pulumi.Output<string> | undefined;
-  
 if (config.getBoolean("createS3") === true) {
   const s3BucketName = config.get("s3BucketName") || "default-s3-bucket";
   const bucket = new aws.s3.Bucket(
@@ -224,10 +234,10 @@ if (config.getBoolean("createEKS") === true) {
       name: eksClusterName,
       version: eksK8sVersion,
       vpcId: "vpc-04a0161c3cefe5035", // Hardcoded VPC
-      publicSubnetIds: [ /* Hardcoded Subnet IDs */ ],
+      publicSubnetIds: [ /* Subnet IDs */ ],
       nodeGroupOptions: {
         instanceProfileName: nodeInstanceProfile.name,
-        instanceType: "t3.medium", // Hardcoded instance type
+        instanceType: "t3.medium",
         desiredCapacity: 2,
         minSize: 1,
         maxSize: 3,
@@ -436,14 +446,14 @@ This project uses a GitHub Actions workflow, located at <code>.github/workflows/
   {
     title: "Security, Authentication, and Multi-Tenancy",
     content: `
-For a secure self-service platform:
+Security and resource isolation are handled in Puluforge through several mechanisms:
 
 <ul>
-  <li><strong>User Authentication:</strong> Use AWS Cognito or OIDC to authenticate users.</li>
-  <li><strong>Multi-Tenancy:</strong> Each user gets a separate Pulumi stack (e.g., <code>userA-dev</code>, <code>userB-staging</code>) to isolate resources.</li>
-  <li><strong>Credential Management:</strong> Use temporary AWS credentials via federated identity instead of long‑lived keys.</li>
-  <li><strong>API Security:</strong> Secure API endpoints with API keys or JWT so only authorized users can trigger deployments.</li>
-  <li><strong>Resource Tagging and Auditing:</strong> Tag resources with user IDs and stack names for cost tracking and auditing.</li>
+    <li><strong>User Identification:</strong> While the application is set up with NextAuth.js for potential user authentication, the current demo version allows manual entry of a <code>userId</code>. This ID is crucial for separating resources.</li>
+    <li><strong>Multi-Tenancy via Stacks:</strong> Resource isolation is achieved by creating a dedicated Pulumi stack for each deployment, named using the provided user ID (e.g., <code>user123-resources</code>). This ensures that one user's deployment doesn't interfere with another's.</li>
+    <li><strong>Credential Management:</strong> The system currently relies on long-lived AWS access keys (<code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>). These are stored securely as GitHub Actions secrets and passed to Pulumi during deployment via configuration. The Pulumi program uses these keys to authenticate with AWS.</li>
+    <li><strong>API Security:</strong> The backend API route (<code>/api/deploy</code>) securely interacts with the GitHub API using a server-side environment variable (<code>process.env.GITHUB_TOKEN</code>) to trigger the workflow. Direct access control to the API endpoint itself could be further enhanced using session validation from NextAuth.js if strict user login were enforced.</li>
+    <li><strong>Network Isolation:</strong> Resources like the RDS database instances are configured to be private within the VPC (<code>publiclyAccessible: false</code>), reducing their exposure.</li>
 </ul>
     `,
   },
@@ -451,15 +461,22 @@ For a secure self-service platform:
     title: "Future Enhancements and Conclusion",
     content: `
 <strong>Future Enhancements:</strong>
+
+<p>While Puluforge provides a functional self-service platform, several areas can be enhanced:</p>
 <ul>
-  <li>Develop a full-featured Kendo vertical stepper UI for guided infrastructure setup.</li>
-  <li>Implement automated rollbacks and advanced state management.</li>
-  <li>Expand multi-tenancy support by enabling users to deploy into their own AWS accounts.</li>
-  <li>Integrate monitoring and alerting (using AWS CloudWatch or Datadog) for production deployments.</li>
+    <li><strong>Enforce Authentication:</strong> Fully integrate and enforce user login using NextAuth.js to replace manual <code>userId</code> entry and secure API access based on user sessions.</li>
+    <li><strong>Temporary Credentials:</strong> Transition from long-lived AWS keys to temporary credentials using IAM Roles, potentially integrating with GitHub Actions OIDC or AWS Cognito for enhanced security.</li>
+    <li><strong>Configuration Flexibility:</strong> Replace hardcoded values in the Pulumi code (like EKS VPC/subnet IDs or instance types) with configurable options passed through the UI and API.</li>
+    <li><strong>Refined UI/UX:</strong> Enhance the multi-step form with more robust validation, feedback, and potentially specific UI component libraries.</li>
+    <li><strong>Resource Management:</strong> Add features to view the status of ongoing and past deployments (leveraging the data saved in local storage) and potentially add functionality to update or destroy previously created infrastructure stacks.</li>
+    <li><strong>Error Handling & Rollbacks:</strong> Improve error reporting during deployment and explore implementing automated rollback procedures if a Pulumi deployment fails.</li>
+    <li><strong>Resource Tagging:</strong> Implement consistent tagging of all created AWS resources with user IDs, stack names, or other relevant metadata for better cost tracking and auditing.</li>
+    <li><strong>Monitoring & Alerting:</strong> Integrate monitoring for deployed resources (e.g., using AWS CloudWatch) and set up alerts for critical issues.</li>
+    <li><strong>Multi-Account Deployments:</strong> Explore options to allow authenticated users to deploy resources into their own designated AWS accounts.</li>
 </ul>
 
 <strong>Conclusion:</strong><br/>
-Puluforge transforms complex AWS infrastructure management into a guided, self-service experience. By integrating Pulumi, Next.js, and modern CI/CD or Lambda solutions, it empowers users to deploy and manage their infrastructure safely, efficiently, and with minimal overhead. This documentation provides a comprehensive roadmap from initial setup to future enhancements.
+Puluforge demonstrates a practical approach to building a self-service infrastructure platform. By combining a Next.js frontend and API with the power of Pulumi for infrastructure definition and GitHub Actions for orchestration, it enables users to request and manage AWS resources like S3, RDS, and EKS through a simplified interface. This documentation outlines the current setup and provides a clear path for future improvements and scaling.
     `,
   },
 ];
