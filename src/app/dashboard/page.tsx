@@ -79,11 +79,25 @@ const ImageCheckbox = ({
   useEffect(() => {
     setChecked(!!formRenderProps.valueGetter(name));
   }, [formRenderProps.valueGetter, name]);
+
   const handleChange = () => {
-    const newValue = !checked;
+    const currentlyChecked = formRenderProps.valueGetter(name);
+    const newValue = !currentlyChecked;
+
+    if (newValue) {
+      const otherResources = ["createS3", "createRDS", "createEKS"].filter(
+        (resName) => resName !== name
+      );
+      otherResources.forEach((resName) => {
+        if (formRenderProps.valueGetter(resName)) {
+          formRenderProps.onChange(resName, { value: false });
+        }
+      });
+    }
     setChecked(newValue);
     formRenderProps.onChange(name, { value: newValue });
   };
+
   return (
     <div
       className={`${styles.imageCheckbox} ${checked ? styles.selected : ""}`}
@@ -461,9 +475,9 @@ const DeploymentForm = () => {
                 }}
               >
                 <strong>Note on Vercel Hosting:</strong> This application is
-                hosted on Vercel. Serverless functions
-                have execution time limits. The real-time log streaming for
-                infrastructure updates that take several minutes might be interrupted due to these
+                hosted on Vercel. Serverless functions have execution time
+                limits. The real-time log streaming for infrastructure updates
+                that take several minutes might be interrupted due to these
                 timeouts.
               </p>
 
@@ -491,7 +505,15 @@ const DeploymentForm = () => {
                     name="userId"
                     label="User ID"
                     component={Input}
-                    validator={(v) => (!v ? "Required" : "")}
+                    validator={(value) => {
+                      if (!value) {
+                        return "User ID is required.";
+                      }
+                      if (!/^[a-z]+$/.test(value)) {
+                        return "User ID must contain only lowercase letters (a-z) and no spaces or special characters.";
+                      }
+                      return "";
+                    }}
                     required
                     className={styles.input}
                   />
@@ -532,7 +554,22 @@ const DeploymentForm = () => {
                         name="s3BucketName"
                         label="S3 Prefix"
                         component={Input}
-                        validator={(v) => (!v ? "Required" : "")}
+                        validator={(value) => {
+                          if (!value) return "S3 Bucket Name is required.";
+                          if (
+                            !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(value)
+                          ) {
+                            return "Must be 3-63 chars, lowercase letters, numbers, or hyphens. Cannot start/end with hyphen.";
+                          }
+                          if (
+                            value.includes("..") ||
+                            value.includes(".-") ||
+                            value.includes("-.")
+                          ) {
+                            return "Cannot contain '..', '.-', or '-.'";
+                          }
+                          return "";
+                        }}
                         required
                         className={styles.input}
                       />
@@ -544,7 +581,13 @@ const DeploymentForm = () => {
                         name="clusterName"
                         label="EKS Cluster Name"
                         component={Input}
-                        validator={(v) => (!v ? "Required" : "")}
+                        validator={(value) => {
+                          if (!value) return "EKS Cluster Name is required.";
+                          if (!/^[a-z0-9][a-z0-9-]{0,99}$/.test(value)) {
+                            return "Must be 1-100 chars, start with letter/number, contain only lowercase letters, numbers, hyphens.";
+                          }
+                          return "";
+                        }}
                         required
                         className={styles.input}
                       />
@@ -556,7 +599,13 @@ const DeploymentForm = () => {
                         name="databases[0].dbName"
                         label="DB Name"
                         component={Input}
-                        validator={(v) => (!v ? "Required" : "")}
+                        validator={(value) => {
+                          if (!value) return "DB Name is required.";
+                          if (!/^[a-z][a-z0-9]{0,62}$/.test(value)) {
+                            return "Must be 1-63 chars, start with a letter, contain only lowercase letters and numbers.";
+                          }
+                          return "";
+                        }}
                         required
                         className={styles.input}
                       />
@@ -564,7 +613,13 @@ const DeploymentForm = () => {
                         name="databases[0].username"
                         label="DB User"
                         component={Input}
-                        validator={(v) => (!v ? "Required" : "")}
+                        validator={(value) => {
+                          if (!value) return "DB User is required.";
+                          if (!/^[a-z][a-z0-9]{0,15}$/.test(value)) {
+                            return "Must be 1-16 chars, start with a letter, contain only lowercase letters and numbers.";
+                          }
+                          return "";
+                        }}
                         required
                         className={styles.input}
                       />
@@ -591,7 +646,43 @@ const DeploymentForm = () => {
               )}
               {step === 3 && (
                 <div className={styles.stepContent}>
-                  <Typography.h4>Deploy</Typography.h4>
+                  <div className={styles.reviewSection}>
+                    
+                    {/* Optional: Add CSS for this class */}
+                    <Typography.h4>Review Your Configuration</Typography.h4>
+                    <ul>
+                      <li>
+                        <strong>User ID:</strong>
+                        {formRenderProps.valueGetter("userId")}
+                      </li>
+                      {formRenderProps.valueGetter("createS3") && (
+                        <li>
+                          <strong>Resource:</strong> S3 Bucket <br />
+                          <strong>Bucket Name:</strong>
+                          {formRenderProps.valueGetter("s3BucketName")}
+                        </li>
+                      )}
+                      {formRenderProps.valueGetter("createRDS") && (
+                        <li>
+                          <strong>Resource:</strong> RDS Database <br />
+                          <strong>DB Name:</strong>
+                          {formRenderProps.valueGetter("databases[0].dbName")}
+                          <br />
+                          <strong>DB User:</strong>
+                          {formRenderProps.valueGetter("databases[0].username")}
+                        </li>
+                      )}
+                      {formRenderProps.valueGetter("createEKS") && (
+                        <li>
+                          <strong>Resource:</strong> EKS Cluster <br />
+                          <strong>Cluster Name:</strong>
+                          {formRenderProps.valueGetter("clusterName")}
+                        </li>
+                      )}
+                    </ul>
+                    <hr className={styles.reviewDivider} />
+                  </div>
+
                   {(isDeploying ||
                     deploymentStatus === "completed" ||
                     deploymentStatus === "failed") && (
@@ -620,7 +711,7 @@ const DeploymentForm = () => {
                   disabled={
                     isDeploying ||
                     !formRenderProps.valid ||
-                    (step >= 1 &&
+                    (step === 1 &&
                       !formRenderProps.valueGetter("createS3") &&
                       !formRenderProps.valueGetter("createRDS") &&
                       !formRenderProps.valueGetter("createEKS"))
