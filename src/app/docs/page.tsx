@@ -186,158 +186,123 @@ Your <code>index.ts</code> conditionally creates AWS resources. For example:
   {
     title: "Next.js API Integration with Pulumi Automation",
     content: `
-  Puluforge leverages the Pulumi Automation API to manage infrastructure deployments, orchestrated through a GitHub Actions workflow. While deployments are not directly triggered by a Next.js API route in this setup, you can integrate a Next.js application to initiate the process programmatically by invoking the GitHub Actions workflow. Below is an overview of how this works and how you can adapt it for your use case.
-  
-  <h3>Deployment Workflow</h3>
-  Puluforge uses a GitHub Actions workflow (<code>.github/workflows/deploy.yml</code>) to deploy infrastructure. The workflow accepts user inputs (e.g., <code>userId</code>, resource creation flags) and executes the Pulumi Automation script. Here’s a simplified version of the workflow:
-  
-  <div class="code-block">
-    <pre>
-  name: Deploy Pulumi Stack
-  on:
-    workflow_dispatch:
-      inputs:
-        userId:
-          description: "User ID"
-          required: true
-        createS3:
-          description: "Create S3 Bucket"
-          required: true
-  jobs:
-    deploy:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - name: Set up Node.js
-          uses: actions/setup-node@v3
-          with:
-            node-version: "18"
-        - name: Install Pulumi CLI
-          run: npm install -g @pulumi/pulumi
-        - name: Install dependencies
-          working-directory: ./pulumi
-          run: npm ci
-        - name: Deploy Pulumi stack
-          working-directory: ./pulumi
-          env:
-            PULUMI_ACCESS_TOKEN: \${{ secrets.PULUMI_ACCESS_TOKEN }}
-            STACK_NAME: \${{ github.event.inputs.userId }}-resources
-            AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_REGION: \${{ secrets.AWS_REGION }}
-            USER_ID: \${{ github.event.inputs.userId }}
-            CREATE_S3: \${{ github.event.inputs.createS3 }}
-          run: |
-            pulumi stack init $STACK_NAME || echo "Stack already exists"
-            pulumi up --skip-preview --yes
-    </pre>
-  </div>
-  
-  <h3>Pulumi Automation Script</h3>
-  The workflow runs a TypeScript script (<code>runDeployment.ts</code>) that uses the Pulumi Automation API to configure and deploy the stack. Here’s an example of the script:
-  
-  <div class="code-block">
-    <pre>
-  import * as automation from "@pulumi/pulumi/automation";
-  import * as path from "path";
-  
-  export async function runDeployment() {
-    const workDir = path.resolve("../p2");
-    const stackName = process.env.STACK_NAME as string;
-    const stack = await automation.LocalWorkspace.createOrSelectStack({
-      stackName,
-      workDir,
-    });
-  
-    await stack.setConfig("awsAccessKey", { value: process.env.AWS_ACCESS_KEY_ID || "" });
-    await stack.setConfig("awsSecretKey", { value: process.env.AWS_SECRET_ACCESS_KEY || "", secret: true });
-    await stack.setConfig("awsRegion", { value: process.env.AWS_REGION || "us-east-1" });
-    await stack.setConfig("createS3", { value: process.env.CREATE_S3 || "" });
-  
-    console.log("Deploying...");
-    const upResult = await stack.up({ onOutput: console.info });
-    console.log("Done:", upResult.outputs);
-    return upResult.outputs;
-  }
-    </pre>
-  </div>
-  
-  <h3>Integrating with a Next.js API</h3>
-  To trigger this deployment from a Next.js application, you can create an API route (e.g., <code>/api/deploy</code>) that uses the GitHub API to dispatch the workflow. Here’s how:
-  
-  1. **Set Up the API Route**: Create a file at <code>pages/api/deploy.ts</code> in your Next.js project.
-  2. **Invoke the Workflow**: Use a GitHub Personal Access Token (PAT) to dispatch the <code>Deploy Pulumi Stack</code> workflow with user inputs.
-  
-  Example API route:
-  
-  <div class="code-block">
-    <pre>
-  import type { NextApiRequest, NextApiResponse } from 'next';
-  import axios from 'axios';
-  
-  export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ message: 'Method Not Allowed' });
-    }
-  
-    const { userId, createS3 } = req.body;
-    const githubToken = process.env.GITHUB_TOKEN; // Store in .env.local
-    const repoOwner = 'your-username'; // Replace with your GitHub username
-    const repoName = 'your-repo'; // Replace with your repository name
-  
-    try {
-      await axios.post(
-        \`https://api.github.com/repos/\${repoOwner}/\${repoName}/actions/workflows/deploy.yml/dispatches\`,
-        {
-          ref: 'main', // Branch to trigger the workflow from
-          inputs: {
-            userId,
-            createS3: createS3.toString(),
-            createRDS: 'false', // Example default values
-            createEKS: 'false',
-            s3BucketName: '',
-          },
-        },
-        {
-          headers: {
-            Authorization: \`Bearer \${githubToken}\`,
-            Accept: 'application/vnd.github.v3+json',
-          },
-        }
-      );
-      res.status(200).json({ message: 'Deployment triggered successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to trigger deployment', error });
-    }
-  }
-    </pre>
-  </div>
-  
-  <h3>How It Works</h3>
-  - A user sends a POST request to <code>/api/deploy</code> with parameters (e.g., <code>{ "userId": "user123", "createS3": true }</code>).
-  - The API route dispatches the GitHub Actions workflow, passing the inputs.
-  - The workflow runs <code>runDeployment.ts</code>, which deploys the infrastructure using the Pulumi Automation API.
-  
-  <h3>Monitor Progress</h3>
-  - Use GitHub’s API to check workflow status and relay it back to the user.
-      `,
+    The Puluforge Next.js application provides the user interface for requesting infrastructure and viewing deployment progress. Here's how it connects the user's choices to the automated Pulumi deployment via GitHub Actions:
+
+<strong>1. User Interface: The Multi-Step Form</strong>
+
+<p>When a user navigates to the <code>/dashboard</code> page, they are presented with a multi-step form (implemented in the <code>DeploymentForm</code> component) to specify their infrastructure needs:</p>
+<ul>
+    <li><strong>Step 1: Basics & Resource Selection:</strong>
+        <ul>
+            <li>The user enters a unique <code>userId</code>. (Note: In this demo version, full authentication isn't required, so this is entered manually).</li>
+            <li>Using visual checkboxes (the <code>ImageCheckbox</code> component), the user selects which AWS resources they want to create: S3, RDS, and/or EKS.
+                <div class="code-block"><code>&lt;ImageCheckbox name="createS3" label="S3 Bucket" imageSrc="/icons/s3.png" ... /&gt;
+&lt;ImageCheckbox name="createRDS" label="RDS Database" imageSrc="/icons/rds.png" ... /&gt;
+&lt;ImageCheckbox name="createEKS" label="EKS Cluster" imageSrc="/icons/eks.png" ... /&gt;
+                </code></div>
+            </li>
+        </ul>
+    </li>
+    <li><strong>Step 2/3: Resource Details:</strong> Based on the selections in Step 1, the user provides specific details (like S3 bucket name, EKS cluster name, or RDS database name, username, and password).</li>
+    <li><strong>Step 4: Confirmation & Submission:</strong> The user reviews their choices and submits the form.</li>
+</ul>
+
+<strong>2. Triggering the Deployment (Frontend to API)</strong>
+
+<p>Upon form submission, the <code>handleSubmit</code> function in the <code>DeploymentForm</code> component gathers all the user inputs into a structure like this:</p>
+<div class="code-block"><pre><code>
+{
+  userId: "user123",
+  createS3: true,
+  createRDS: false,
+  createEKS: true,
+  s3BucketName: "my-unique-bucket-name",
+  clusterName: "my-eks-cluster",
+  databases: [...] // Only first DB used if createRDS is true
+}
+</code></pre></div>
+
+<p>It then sends this data to a Next.js API route (<code>/api/deploy</code>) using a POST request:</p>
+<div class="code-block"><pre><code>
+// Inside handleSubmit in DeploymentForm.tsx
+const res = await fetch("/api/deploy", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(finalFormValues), // Contains the form data
+});
+const responseData = await res.json();
+// If successful, responseData contains { message: "...", runId: 12345678 }
+currentRunIdRef.current = responseData.runId;
+// Start listening for logs using the runId
+setupEventSource(responseData.runId, finalFormValues);
+</code></pre></div>
+
+<strong>3. The Backend API Route: \`/api/deploy\`</strong>
+
+<p>This API route (defined in <code>pages/api/deploy.ts</code> or <code>app/api/deploy/route.ts</code>) acts as the bridge to GitHub Actions:</p>
+<ul>
+    <li>It receives the form data from the frontend request.</li>
+    <li>It extracts the necessary details (userId, resource flags, names).</li>
+    <li>Crucially, it uses the GitHub REST API to programmatically trigger the <code>deploy.yml</code> workflow we discussed earlier. It sends the form data as \`inputs\` to the workflow. This requires a GitHub Personal Access Token (PAT) stored securely as an environment variable (<code>process.env.GITHUB_TOKEN</code>) on the server.</li>
+    <div class="code-block"><pre><code>
+// Inside /api/deploy route handler
+const DISPATCH_URL = "https://api.github.com/repos/.../deploy.yml/dispatches";
+const dispatchRes = await fetch(DISPATCH_URL, {
+  method: "POST",
+  headers: {
+    Authorization: \`Bearer \${process.env.GITHUB_TOKEN}\`,
+    Accept: "application/vnd.github.v3+json",
+    "Content-Type": "application/json",
   },
-  {
-    title: "Security, Authentication, and Multi-Tenancy",
-    content: `
-  Puluforge ensures a secure and isolated self-service platform tailored for multi-user environments:
+  body: JSON.stringify({
+    ref: "main", // Target branch
+    inputs: { /* Form data mapped here, e.g., userId, createS3: 'true', ... */ }
+  }),
+});
+    </code></pre></div>
+    <li>After triggering the workflow, the API route polls the GitHub API to find the unique ID (<code>runId</code>) of the workflow run that just started.</li>
+    <li>It returns this <code>runId</code> back to the frontend upon success.</li>
+</ul>
+
+<strong>4. Real-time Logging with Server-Sent Events (SSE)</strong>
+
+<p>Once the frontend receives the <code>runId</code>, it needs to show the user the deployment progress. This is achieved using Server-Sent Events (SSE) and another API route (<code>/api/logs</code>):</p>
+<ul>
+    <li><strong>Frontend Connection:</strong> The frontend's <code>setupEventSource</code> function creates an <code>EventSource</code> connection to <code>/api/logs?runId={runId}</code>.</li>
+    <div class="code-block"><pre><code>
+// Inside setupEventSource in DeploymentForm.tsx
+const es = new EventSource(\`/api/logs?runId=\${runId}\`);
+eventSourceRef.current = es;
+
+es.addEventListener("log", (event) => { /* Update log display */ });
+es.addEventListener("status", (event) => { /* Update deployment status */ });
+es.addEventListener("done", (event) => { /* Handle completion */ });
+es.addEventListener("error", (event) => { /* Handle errors */ });
+    </code></pre></div>
+    <li><strong>Backend Streaming (\`/api/logs\`):</strong> This API route keeps the connection open. It periodically polls the GitHub API for the status of the specific workflow run (using the \`runId\`). It also fetches the latest logs from GitHub Actions, processes them (removes timestamps, cleans formatting), and calculates the *new* log lines since the last check.</li>
+    <li>It streams updates back to the frontend using specific SSE event types:
+        <ul>
+            <li><code>event: status</code>: Sends updates on the workflow status (e.g., 'queued', 'running', 'completed') and conclusion ('success', 'failure').</li>
+            <li><code>event: log</code>: Sends only the *new* log lines generated by the workflow.</li>
+            <li><code>event: done</code>: Sent when the workflow completes, indicating success or failure.</li>
+            <li><code>event: error</code>: Sent if there's an error within the API route itself (e.g., cannot reach GitHub).</li>
+        </ul>
+    </li>
+</ul>
+
+<p>This setup allows the user to see the deployment logs appearing in real-time in their browser, along with status updates and a progress bar, providing immediate feedback on the infrastructure creation process.</p>
+
+<strong>5. Storing Results</strong>
+<p>Upon successful completion (indicated by the 'done' SSE event with a success status), the frontend saves key details about the deployment (like the user ID, stack name, run ID, and requested resources) into the browser's local storage for potential future reference.</p>
+<div class="code-block"><pre><code>
+// Inside the 'done' event listener in setupEventSource
+if (doneData.success === true) {
+  // ... prepare deployment data ...
+  saveDeploymentToLocalStorage(deploymentToStore);
+  window.dispatchEvent(new Event("deploymentsUpdated")); // Notify other parts of the app if needed
+}
+</code></pre></div>
   
-  <ul>
-    <li><strong>User Authentication:</strong> Currently, authentication is managed externally, with user-specific inputs (e.g., <code>userId</code>) provided during workflow dispatch to identify users initiating deployments.</li>
-    <li><strong>Multi-Tenancy:</strong> Each user receives a dedicated Pulumi stack (e.g., <code>{userId}-resources</code>), ensuring resource isolation by provisioning separate instances of S3 buckets, RDS clusters, and EKS clusters per user.</li>
-    <li><strong>Credential Management:</strong> Leverages Pulumi’s built-in secret management to encrypt and manage AWS credentials (e
-  
-  .g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>) securely within the stack configuration, sourced from GitHub Secrets for automated deployment.</li>
-    <li><strong>Network Isolation:</strong> Enforces resource isolation through private RDS instances (<code>publiclyAccessible: false</code>) and EKS clusters deployed within a specific VPC and subnet configuration, minimizing exposure to external access.</li>
-    <li><strong>Deployment Security:</strong> Deployment workflows are triggered manually via GitHub Actions, with access controlled by repository permissions and secured by a Pulumi access token stored as a GitHub Secret.</li>
-  </ul>
-  
-  <p><strong>Note:</strong> Features like federated identity with temporary AWS credentials, API endpoint security with JWT or API keys, and comprehensive resource tagging for auditing are not yet implemented in the provided configuration. These enhancements can be integrated to further strengthen security and traceability.</p>
     `,
   },
   {
