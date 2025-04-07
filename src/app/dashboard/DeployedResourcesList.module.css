@@ -1,0 +1,75 @@
+/* src/components/DeployedResourcesList/DeployedResourcesList.module.css */
+.listContainer {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.deploymentCard {
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 2px !important; /* Override Kendo potentially */
+}
+.cardSubtitle {
+  font-size: 0.85em;
+  color: #6c757d;
+  margin-top: 0;
+}
+
+.resourceSection {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #eee;
+}
+.resourceSection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.resourceSection strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #343a40;
+}
+
+.resourceSection p {
+  margin: 2px 0;
+  font-size: 0.9em;
+  word-break: break-all; /* Prevent long URLs/endpoints from overflowing */
+}
+
+.resourceSection code {
+  background-color: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+
+.resourceSection a {
+  color: #007bff;
+  text-decoration: none;
+}
+.resourceSection a:hover {
+  text-decoration: underline;
+}

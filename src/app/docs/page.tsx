@@ -186,52 +186,158 @@ Your <code>index.ts</code> conditionally creates AWS resources. For example:
   {
     title: "Next.js API Integration with Pulumi Automation",
     content: `
-Your Next.js API route triggers deployments using the Pulumi Automation API. For example, your <code>deploy.ts</code> may contain:
-
-<div class="code-block">
-  <code>
-    import * as automation from "@pulumi/pulumi/automation";<br/>
-    import * as path from "path";<br/><br/>
-
-    export async function runDeployment(configOptions: {<br/>
-      userId: string;<br/>
-      createS3: boolean;<br/>
-      createRDS: boolean;<br/>
-      createEKS: boolean;<br/>
-      s3BucketName?: string;<br/>
-      databases: { dbName: string; username: string; password: string }[];<br/>
-    }): Promise&lt;any&gt; {<br/>
-      const workDir = path.resolve("C:/Your/Project/Path/pulumi");<br/>
-      const stackName = \`\${configOptions.userId}-losangeDev\`;<br/>
-      const stack = await automation.LocalWorkspace.createOrSelectStack({ stackName, workDir });<br/><br/>
-
-      await stack.setConfig("createS3", { value: configOptions.createS3.toString() });<br/>
-      await stack.setConfig("createRDS", { value: configOptions.createRDS.toString() });<br/>
-      await stack.setConfig("createEKS", { value: configOptions.createEKS.toString() });<br/>
-      await stack.setConfig("s3BucketName", { value: configOptions.s3BucketName || "default-s3-bucket" });<br/>
-      await stack.setConfig("databases", { value: JSON.stringify(configOptions.databases) });<br/><br/>
-
-      const upResult = await stack.up({ onOutput: console.info });<br/>
-      return upResult.outputs;<br/>
+  Puluforge leverages the Pulumi Automation API to manage infrastructure deployments, orchestrated through a GitHub Actions workflow. While deployments are not directly triggered by a Next.js API route in this setup, you can integrate a Next.js application to initiate the process programmatically by invoking the GitHub Actions workflow. Below is an overview of how this works and how you can adapt it for your use case.
+  
+  <h3>Deployment Workflow</h3>
+  Puluforge uses a GitHub Actions workflow (<code>.github/workflows/deploy.yml</code>) to deploy infrastructure. The workflow accepts user inputs (e.g., <code>userId</code>, resource creation flags) and executes the Pulumi Automation script. Here’s a simplified version of the workflow:
+  
+  <div class="code-block">
+    <pre>
+  name: Deploy Pulumi Stack
+  on:
+    workflow_dispatch:
+      inputs:
+        userId:
+          description: "User ID"
+          required: true
+        createS3:
+          description: "Create S3 Bucket"
+          required: true
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - name: Set up Node.js
+          uses: actions/setup-node@v3
+          with:
+            node-version: "18"
+        - name: Install Pulumi CLI
+          run: npm install -g @pulumi/pulumi
+        - name: Install dependencies
+          working-directory: ./pulumi
+          run: npm ci
+        - name: Deploy Pulumi stack
+          working-directory: ./pulumi
+          env:
+            PULUMI_ACCESS_TOKEN: \${{ secrets.PULUMI_ACCESS_TOKEN }}
+            STACK_NAME: \${{ github.event.inputs.userId }}-resources
+            AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION: \${{ secrets.AWS_REGION }}
+            USER_ID: \${{ github.event.inputs.userId }}
+            CREATE_S3: \${{ github.event.inputs.createS3 }}
+          run: |
+            pulumi stack init $STACK_NAME || echo "Stack already exists"
+            pulumi up --skip-preview --yes
+    </pre>
+  </div>
+  
+  <h3>Pulumi Automation Script</h3>
+  The workflow runs a TypeScript script (<code>runDeployment.ts</code>) that uses the Pulumi Automation API to configure and deploy the stack. Here’s an example of the script:
+  
+  <div class="code-block">
+    <pre>
+  import * as automation from "@pulumi/pulumi/automation";
+  import * as path from "path";
+  
+  export async function runDeployment() {
+    const workDir = path.resolve("../p2");
+    const stackName = process.env.STACK_NAME as string;
+    const stack = await automation.LocalWorkspace.createOrSelectStack({
+      stackName,
+      workDir,
+    });
+  
+    await stack.setConfig("awsAccessKey", { value: process.env.AWS_ACCESS_KEY_ID || "" });
+    await stack.setConfig("awsSecretKey", { value: process.env.AWS_SECRET_ACCESS_KEY || "", secret: true });
+    await stack.setConfig("awsRegion", { value: process.env.AWS_REGION || "us-east-1" });
+    await stack.setConfig("createS3", { value: process.env.CREATE_S3 || "" });
+  
+    console.log("Deploying...");
+    const upResult = await stack.up({ onOutput: console.info });
+    console.log("Done:", upResult.outputs);
+    return upResult.outputs;
+  }
+    </pre>
+  </div>
+  
+  <h3>Integrating with a Next.js API</h3>
+  To trigger this deployment from a Next.js application, you can create an API route (e.g., <code>/api/deploy</code>) that uses the GitHub API to dispatch the workflow. Here’s how:
+  
+  1. **Set Up the API Route**: Create a file at <code>pages/api/deploy.ts</code> in your Next.js project.
+  2. **Invoke the Workflow**: Use a GitHub Personal Access Token (PAT) to dispatch the <code>Deploy Pulumi Stack</code> workflow with user inputs.
+  
+  Example API route:
+  
+  <div class="code-block">
+    <pre>
+  import type { NextApiRequest, NextApiResponse } from 'next';
+  import axios from 'axios';
+  
+  export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ message: 'Method Not Allowed' });
     }
-  </code>
-</div>
-
-Your Next.js API route (for example, at <code>/api/deploy</code>) calls this function to trigger deployments dynamically.
-    `,
+  
+    const { userId, createS3 } = req.body;
+    const githubToken = process.env.GITHUB_TOKEN; // Store in .env.local
+    const repoOwner = 'your-username'; // Replace with your GitHub username
+    const repoName = 'your-repo'; // Replace with your repository name
+  
+    try {
+      await axios.post(
+        \`https://api.github.com/repos/\${repoOwner}/\${repoName}/actions/workflows/deploy.yml/dispatches\`,
+        {
+          ref: 'main', // Branch to trigger the workflow from
+          inputs: {
+            userId,
+            createS3: createS3.toString(),
+            createRDS: 'false', // Example default values
+            createEKS: 'false',
+            s3BucketName: '',
+          },
+        },
+        {
+          headers: {
+            Authorization: \`Bearer \${githubToken}\`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+      res.status(200).json({ message: 'Deployment triggered successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to trigger deployment', error });
+    }
+  }
+    </pre>
+  </div>
+  
+  <h3>How It Works</h3>
+  - A user sends a POST request to <code>/api/deploy</code> with parameters (e.g., <code>{ "userId": "user123", "createS3": true }</code>).
+  - The API route dispatches the GitHub Actions workflow, passing the inputs.
+  - The workflow runs <code>runDeployment.ts</code>, which deploys the infrastructure using the Pulumi Automation API.
+  
+  <h3>Monitor Progress</h3>
+  - Use GitHub’s API to check workflow status and relay it back to the user.
+      `,
   },
   {
-    title: "AWS Lambda Integration for Pulumi Deployments",
+    title: "Security, Authentication, and Multi-Tenancy",
     content: `
-Running long Pulumi deployments directly from serverless functions (like Vercel) can be challenging. Instead, you can offload these to AWS Lambda:
-
-<ul>
-  <li><strong>Bundle Your Pulumi Folder:</strong> Package your Pulumi project (compiled code + <code>node_modules</code>) into a ZIP file.</li>
-  <li><strong>Create a Lambda Function:</strong> In the AWS Console, create a function (e.g., <code>PulumiDeploymentFunction</code>) using Node.js 16.x.</li>
-  <li><strong>Upload Your ZIP Package:</strong> Under Function Code, upload your deployment ZIP.</li>
-  <li><strong>Set Environment Variables:</strong> Configure AWS credentials and Pulumi tokens in Lambda’s environment variables.</li>
-  <li><strong>Configure API Gateway (Optional):</strong> Trigger the Lambda via API Gateway, then have your Next.js API call that endpoint.</li>
-</ul>
+  Puluforge ensures a secure and isolated self-service platform tailored for multi-user environments:
+  
+  <ul>
+    <li><strong>User Authentication:</strong> Currently, authentication is managed externally, with user-specific inputs (e.g., <code>userId</code>) provided during workflow dispatch to identify users initiating deployments.</li>
+    <li><strong>Multi-Tenancy:</strong> Each user receives a dedicated Pulumi stack (e.g., <code>{userId}-resources</code>), ensuring resource isolation by provisioning separate instances of S3 buckets, RDS clusters, and EKS clusters per user.</li>
+    <li><strong>Credential Management:</strong> Leverages Pulumi’s built-in secret management to encrypt and manage AWS credentials (e
+  
+  .g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>) securely within the stack configuration, sourced from GitHub Secrets for automated deployment.</li>
+    <li><strong>Network Isolation:</strong> Enforces resource isolation through private RDS instances (<code>publiclyAccessible: false</code>) and EKS clusters deployed within a specific VPC and subnet configuration, minimizing exposure to external access.</li>
+    <li><strong>Deployment Security:</strong> Deployment workflows are triggered manually via GitHub Actions, with access controlled by repository permissions and secured by a Pulumi access token stored as a GitHub Secret.</li>
+  </ul>
+  
+  <p><strong>Note:</strong> Features like federated identity with temporary AWS credentials, API endpoint security with JWT or API keys, and comprehensive resource tagging for auditing are not yet implemented in the provided configuration. These enhancements can be integrated to further strengthen security and traceability.</p>
     `,
   },
   {

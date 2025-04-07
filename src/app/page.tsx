@@ -162,7 +162,7 @@ const featureData = [
     id: 3,
     title: "Advanced Security",
     description:
-      "Safeguard your infrastructure with automated credential management and robust isolation protocols, ensuring comprehensive asset protection.",
+      "Secure your infrastructure with automated credential management and network isolation, ensuring strong protection for your cloud resources.",
     image: "/features/security.png",
   },
 ];
