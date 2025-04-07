@@ -112,75 +112,142 @@ This ensures each stack (e.g., <code>puluforge-dev</code>, <code>puluforge-prod<
   },
   {
     title: "Infrastructure Code (S3, RDS, EKS)",
-    content: `
-Your <code>index.ts</code> conditionally creates AWS resources. For example:
+    content: 
+  `
+  The core logic for defining the cloud infrastructure resides in the <code>pulumi/index.ts</code> file. This TypeScript code uses the Pulumi SDK to declare the desired state of resources in AWS.
 
-<strong>S3 Bucket:</strong>
-<div class="code-block">
-  <code>
-    if (config.getBoolean("createS3") === true) {<br/>
-      &nbsp;&nbsp;const s3BucketName = config.get("s3BucketName") || "default-s3-bucket";<br/>
-      &nbsp;&nbsp;const bucket = new aws.s3.Bucket(\`bucket-\${s3BucketName}\`, {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;bucket: s3BucketName,<br/>
-      &nbsp;&nbsp;}, { provider: awsProvider });<br/>
-      &nbsp;&nbsp;s3BucketOutput = bucket.bucket;<br/>
-    }
-  </code>
-</div>
+<strong>Reading Configuration</strong>
+<p>The program starts by accessing configuration values passed to it during the deployment (typically via the GitHub Actions workflow). This includes AWS credentials and flags indicating which resources the user chose to create.</p>
+<div class="code-block"><pre><code>
+import * as pulumi from "@pulumi/pulumi";
+import * as aws from "@pulumi/aws";
+// ... other imports
 
-<strong>RDS (Aurora MySQL) Deployment:</strong>
-<div class="code-block">
-  <code>
-    if (config.getBoolean("createRDS") === true) {<br/>
-      &nbsp;&nbsp;const rdsInstanceIdentifier = "database-pulumi";<br/>
-      &nbsp;&nbsp;const databases = JSON.parse(config.require("databases"));<br/>
-      &nbsp;&nbsp;databases.forEach((db: any) =&gt; {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;new aws.rds.ClusterInstance(\`rds-instance-\${db.dbName}\`, {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;identifier: \`\${rdsInstanceIdentifier}-\${db.dbName}\`,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clusterIdentifier: rdsInstanceIdentifier,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;instanceClass: "db.t4g.micro",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;engine: "aurora-mysql",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;engineVersion: "8.0",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;publiclyAccessible: false,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;applyImmediately: true,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;});<br/>
-      &nbsp;&nbsp;});<br/>
-    }
-  </code>
-</div>
+const config = new pulumi.Config();
 
-<strong>EKS Cluster:</strong>
-<div class="code-block">
-  <code>
-    if (config.getBoolean("createEKS") === true) {<br/>
-      &nbsp;&nbsp;const eksClusterName = "fabulous-electro-gopher";<br/>
-      &nbsp;&nbsp;const cluster = new eks.Cluster("eksCluster", {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;name: eksClusterName,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;instanceType: "t3.medium",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;version: config.get("eksK8sVersion") || "1.31",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;vpcId: "vpc-04a0161c3cefe5035",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;publicSubnetIds: [<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-0a6f0e8d65f1fd095",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-03309b9ea4ced012b",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-0607d56e3d621b404",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-0e6e3f6c7ee38aa7b",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-02f60cf6daf7187d9",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"subnet-0416b66f4749be8ba",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;],<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;nodeGroupOptions: {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;instanceProfileName: nodeInstanceProfile.name,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;desiredCapacity: 2,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;minSize: 1,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;maxSize: 3,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;},<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;providerCredentialOpts: {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;profileName: config.get("awsProfile") || "default",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;},<br/>
-      &nbsp;&nbsp;});<br/>
-      &nbsp;&nbsp;eksClusterOutput = cluster.eksCluster.name;<br/>
-    }
-  </code>
-</div>
+const awsAccessKey = config.require("awsAccessKey");
+const awsSecretKey = config.requireSecret("awsSecretKey");
+const awsRegion = config.require("awsRegion");
+
+// Create an AWS provider instance to ensure resources use these specific credentials/region
+const awsProvider = new aws.Provider("aws-provider", {
+  accessKey: awsAccessKey,
+  secretKey: awsSecretKey,
+  region: awsRegion as aws.Region,
+});
+</code></pre></div>
+
+<strong>Conditional Resource Creation</strong>
+<p>The code uses the configuration values (<code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>) to conditionally define resources. If a flag is set to <code>true</code>, the corresponding block of code executes, creating that resource.</p>
+
+<strong>S3 Bucket Definition</strong>
+<p>If <code>createS3</code> is true, an S3 bucket is created. The bucket name is taken from the configuration (<code>s3BucketName</code>) if provided, otherwise, a default name is used.</p>
+<div class="code-block"><pre><code>
+let s3BucketOutput: pulumi.Output<string> | undefined;
+  
+if (config.getBoolean("createS3") === true) {
+  const s3BucketName = config.get("s3BucketName") || "default-s3-bucket";
+  const bucket = new aws.s3.Bucket(
+    \`bucket-\${s3BucketName}\`,
+    {
+      bucket: s3BucketName,
+    },
+    { provider: awsProvider }
+  );
+  s3BucketOutput = bucket.bucket;
+}
+</code></pre></div>
+
+<strong>RDS Aurora MySQL Database Definition</strong>
+<p>If <code>createRDS</code> is true, an AWS RDS Aurora MySQL cluster and instance are provisioned. It reads the database details (name, username, password) from the <code>databases</code> configuration key (which is expected to be a JSON string containing an array).</p>
+<div class="code-block"><pre><code>
+let rdsEndpoint: pulumi.Output<string> | undefined;
+
+if (config.getBoolean("createRDS") === true) {
+  const rdsInstanceIdentifier = "database-pulumi";
+  const databasesRaw = config.get("databases") || "[]";
+  const databases = JSON.parse(databasesRaw);
+
+  if (databases.length > 0) {
+    const rdsCluster = new aws.rds.Cluster(
+      \`rds-cluster-\${rdsInstanceIdentifier}\`,
+      {
+        clusterIdentifier: rdsInstanceIdentifier,
+        engine: "aurora-mysql",
+        engineVersion: "8.0",
+        databaseName: databases[0].dbName,
+        masterUsername: databases[0].username,
+        masterPassword: databases[0].password,
+        skipFinalSnapshot: true,
+        applyImmediately: true,
+      },
+      { provider: awsProvider }
+    );
+    rdsEndpoint = rdsCluster.endpoint;
+
+    // Creates instance(s) within the cluster
+    new aws.rds.ClusterInstance(
+      \`rds-instance-\${databases[0].dbName}\`, // Simplified example for one instance
+      {
+        identifier: \`\${rdsInstanceIdentifier}-\${databases[0].dbName}\`,
+        clusterIdentifier: rdsCluster.clusterIdentifier,
+        instanceClass: "db.t4g.micro",
+        engine: "aurora-mysql",
+        engineVersion: "8.0",
+        publiclyAccessible: false, // Instance is private
+        applyImmediately: true,
+      },
+      { provider: awsProvider }
+    );
+    // Parameter group setup also occurs here...
+  }
+}
+</code></pre></div>
+
+<strong>EKS Cluster Definition</strong>
+<p>If <code>createEKS</code> is true, a Kubernetes cluster is created using the high-level <code>@pulumi/eks</code> component. This simplifies EKS setup significantly. Note that in this specific example, values like the VPC ID, subnet IDs, and instance profile name are hardcoded directly in the Pulumi code. For more flexibility, these could also be driven by configuration.</p>
+<div class="code-block"><pre><code>
+import * as eks from "@pulumi/eks";
+// ... other imports and config reading
+
+let eksClusterOutput: pulumi.Output<string> | undefined;
+
+if (config.getBoolean("createEKS") === true) {
+  const eksClusterName = config.get("clusterName") || "default-eks-cluster"; // Reads name from config
+  const eksK8sVersion = config.get("eksK8sVersion") || "1.31";
+
+  const nodeInstanceProfile = new aws.iam.InstanceProfile(/* ... configuration ... */);
+
+  const cluster = new eks.Cluster(
+    "eksCluster",
+    {
+      name: eksClusterName,
+      version: eksK8sVersion,
+      vpcId: "vpc-04a0161c3cefe5035", // Hardcoded VPC
+      publicSubnetIds: [ /* Hardcoded Subnet IDs */ ],
+      nodeGroupOptions: {
+        instanceProfileName: nodeInstanceProfile.name,
+        instanceType: "t3.medium", // Hardcoded instance type
+        desiredCapacity: 2,
+        minSize: 1,
+        maxSize: 3,
+      },
+      // ... other options
+    },
+    { provider: awsProvider }
+  );
+  eksClusterOutput = cluster.eksCluster.name;
+}
+</code></pre></div>
+
+<strong>Exporting Outputs</strong>
+<p>Finally, the program exports key pieces of information from the created resources (if any). These outputs, like the S3 bucket name, RDS endpoint, or EKS cluster name, are displayed by Pulumi upon successful completion of the deployment and can be used to connect to or manage the resources.</p>
+<div class="code-block"><pre><code>
+export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
+</code></pre></div>
+
+<p>This <code>index.ts</code> file, combined with the configuration passed by the GitHub Actions workflow, defines precisely what infrastructure Puluforge will manage in AWS based on user requests.</p>
+
     `,
   },
   {
@@ -299,7 +366,7 @@ es.addEventListener("error", (event) => { /* Handle errors */ });
 if (doneData.success === true) {
   // ... prepare deployment data ...
   saveDeploymentToLocalStorage(deploymentToStore);
-  window.dispatchEvent(new Event("deploymentsUpdated")); // Notify other parts of the app if needed
+  window.dispatchEvent(new Event("deploymentsUpdated"));
 }
 </code></pre></div>
   
