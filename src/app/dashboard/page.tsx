@@ -453,6 +453,20 @@ const DeploymentForm = () => {
                   within the project setup.
                 </li>
               </ol>
+              <p
+                style={{
+                  fontStyle: "italic",
+                  fontSize: "0.9em",
+                  marginTop: "15px",
+                }}
+              >
+                <strong>Note on Vercel Hosting:</strong> This application is
+                hosted on Vercel. Serverless functions
+                have execution time limits. The real-time log streaming for
+                infrastructure updates that take several minutes might be interrupted due to these
+                timeouts.
+              </p>
+
               <p>
                 Start deploying you <strong>S3 bucket</strong>.
               </p>
