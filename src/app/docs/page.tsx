@@ -86,7 +86,7 @@ The infrastructure code for Puluforge resides within the <code>pulumi/</code> di
   {
     title: "AWS Credentials and Pulumi Config",
     content: `
-    Pulumi uses a configuration system to manage settings that can vary between deployments or stacks, including sensitive data like credentials. In Puluforge, this configuration is handled automatically by the GitHub Actions workflow:
+    <p>Pulumi uses a configuration system to manage settings that can vary between deployments or stacks, including sensitive data like credentials. In Puluforge, this configuration is handled automatically by the GitHub Actions workflow:</p>
 
     <strong>1. Source of Configuration:</strong>
     <ul>
