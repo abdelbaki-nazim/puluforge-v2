@@ -31,6 +31,15 @@ export async function POST(req: NextRequest) {
       clusterName,
     } = await req.json();
 
+    console.log(      userId,
+      createS3,
+      createRDS,
+      createEKS,
+      s3BucketName,
+      databases,
+      clusterName,);
+    
+
     if (!userId) {
       return NextResponse.json(
         { error: "userId is required" },
