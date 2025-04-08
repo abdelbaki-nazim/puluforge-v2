@@ -70,8 +70,8 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      const pollInterval = 3000;
-      const maxAttempts = 120;
+      const pollInterval = 4000;
+      const maxAttempts = 580;
       let attempts = 0;
 
       const poll = async () => {
