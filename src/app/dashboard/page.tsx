@@ -819,6 +819,33 @@ const DeploymentForm = () => {
                         </li>
                       )}
                     </ul>
+                    <div
+                      style={{
+                        marginTop: "15px",
+                        marginBottom: "15px",
+                        fontStyle: "italic",
+                        color: "#555",
+                      }}
+                    >
+                      {formRenderProps.valueGetter("createEKS") && (
+                        <p>
+                          <strong>Note:</strong> EKS cluster creation typically
+                          takes <strong>15-25 minutes</strong>.
+                        </p>
+                      )}
+                      {formRenderProps.valueGetter("createRDS") && (
+                        <p>
+                          <strong>Note:</strong> RDS database creation typically
+                          takes <strong>3-7 minutes</strong>.
+                        </p>
+                      )}
+                      {formRenderProps.valueGetter("createS3") && (
+                        <p>
+                          <strong>Note:</strong> S3 bucket creation typically
+                          takes <strong>under 1 minute</strong>.
+                        </p>
+                      )}
+                    </div>
                     <hr className={styles.reviewDivider} />
                   </div>
 
