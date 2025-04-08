@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
             Accept: "application/vnd.github.v3+json",
           },
         });
+
         if (!initialRes.ok) {
           throw new Error(`Failed to fetch run ${runId}: ${initialRes.status}`);
         }
