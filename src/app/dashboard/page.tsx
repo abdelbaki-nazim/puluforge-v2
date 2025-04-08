@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, JSX } from "react";
 import { Button } from "@progress/kendo-react-buttons";
 import { Input } from "@progress/kendo-react-inputs";
 import {
@@ -147,10 +147,17 @@ const DeploymentForm = () => {
     string | null
   >(null);
   const [showTriggerNotification, setShowTriggerNotification] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [finalDeploymentMessage, setFinalDeploymentMessage] = useState<{
+    type: "success" | "error";
+    message: string;
+    details?: string;
+  } | null>(null);
 
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -234,9 +241,12 @@ const DeploymentForm = () => {
       es.addEventListener("log", (event: MessageEvent) => {
         try {
           const d = JSON.parse(event.data);
-          setLogOutput((p) => p + (d.lines || "") + (d.replace ? "" : "\n"));
+          setLogOutput((prev) =>
+            d.replace ? d.lines || "" : prev + (d.lines || "")
+          );
         } catch (e) {
           console.error("Log parse error", e);
+          setLogOutput((prev) => prev + "Error parsing log line.\n");
         }
       });
 
@@ -256,8 +266,14 @@ const DeploymentForm = () => {
           const doneData = JSON.parse(event.data);
           console.log("SSE Done:", doneData);
           setDeploymentStatus("completed");
+          setDeploymentConclusion(doneData.conclusion || "unknown");
 
           if (doneData.success === true) {
+            setFinalDeploymentMessage({
+              type: "success",
+              message: "Deployment successful!",
+              details: "Please check your Pulumi account for resource details.",
+            });
             const stackName = `${submittedData.userId}-resources`;
             const deploymentToStore: StoredDeployment = {
               runId: currentRunIdRef.current || "unknown-run-id",
@@ -289,7 +305,12 @@ const DeploymentForm = () => {
             saveDeploymentToLocalStorage(deploymentToStore);
             window.dispatchEvent(new Event("deploymentsUpdated"));
           } else {
-            console.log("Deployment failed, not storing.");
+            setFinalDeploymentMessage({
+              type: "error",
+              message: `Deployment ${doneData.conclusion || "failed"}.`,
+              details: "Please review the logs above for errors.",
+            });
+            console.log("Deployment failed, not storing details.");
           }
 
           setIsDeploying(false);
@@ -299,6 +320,16 @@ const DeploymentForm = () => {
           }
         } catch (e) {
           console.error("Done event parse error:", e);
+          setFinalDeploymentMessage({
+            type: "error",
+            message: "Error processing deployment result.",
+            details: "Could not parse the final status event.",
+          });
+          setIsDeploying(false);
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
         }
       });
 
@@ -307,11 +338,21 @@ const DeploymentForm = () => {
           const d = JSON.parse(event.data);
           console.error("SSE BE Error:", d.message);
           setLogOutput((p) => p + `\n--- ERROR: ${d.message} ---\n`);
+          setFinalDeploymentMessage({
+            type: "error",
+            message: "Deployment Error",
+            details: d.message || "An error occurred on the server.",
+          });
           setDeploymentStatus("failed");
           setDeploymentConclusion("backend_error");
         } catch (e) {
           console.error("SSE Error parse failed:", e);
-          setLogOutput((p) => p + "\n--- Non-JSON error event ---\n");
+          setLogOutput((p) => p + "\n--- Non-JSON error event received ---\n");
+          setFinalDeploymentMessage({
+            type: "error",
+            message: "Deployment Error",
+            details: "Received an unreadable error from the server.",
+          });
           setDeploymentStatus("failed");
           setDeploymentConclusion("sse_error");
         }
@@ -325,15 +366,20 @@ const DeploymentForm = () => {
       es.onerror = (error) => {
         if (eventSourceRef.current) {
           console.error("SSE Connection Error:", error);
-          setLogOutput((p) => p + "\n--- Connection lost ---\n");
           if (
             deploymentStatus !== "completed" &&
             deploymentStatus !== "failed"
           ) {
+            setLogOutput((p) => p + "\n--- Connection lost ---\n");
+            setFinalDeploymentMessage({
+              type: "error",
+              message: "Connection Lost",
+              details: "The connection to the server was interrupted.",
+            });
             setDeploymentStatus("failed");
             setDeploymentConclusion("network_error");
+            setIsDeploying(false);
           }
-          setIsDeploying(false);
           eventSourceRef.current.close();
           eventSourceRef.current = null;
         }
@@ -364,6 +410,8 @@ const DeploymentForm = () => {
     setDeploymentStatus("starting");
     setDeploymentConclusion(null);
     setProgress(0);
+    setFinalDeploymentMessage(null);
+    setLogOutput("");
     currentRunIdRef.current = null;
 
     console.log("Submitting:", finalFormValues);
@@ -414,6 +462,99 @@ const DeploymentForm = () => {
       setIsDeploying(false);
     }
   };
+
+  const processLogLine = (line: string): JSX.Element => {
+    line = line.trim();
+    if (line.startsWith("+")) {
+      return (
+        <span style={{ color: "#28a745" }} key={Math.random()}>
+          {line}
+          {"\n"}
+        </span>
+      );
+    } else if (line.startsWith("~")) {
+      return (
+        <span style={{ color: "#ffc107" }} key={Math.random()}>
+          {line}
+          {"\n"}
+        </span>
+      );
+    } else if (line.startsWith("-")) {
+      return (
+        <span style={{ color: "#dc3545" }} key={Math.random()}>
+          {line}
+          {"\n"}
+        </span>
+      );
+    } else if (line.match(/pulumi:pulumi:Stack/)) {
+      return (
+        <span style={{ fontWeight: "bold" }} key={Math.random()}>
+          {line}
+          {"\n"}
+        </span>
+      );
+    } else if (
+      line.match(/aws:[a-z0-9\/\-]+:[A-Za-z0-9]+/) ||
+      line.match(/Diagnostics:|Outputs:/)
+    ) {
+      return (
+        <span
+          style={{ fontWeight: "bold", color: "#007bff" }}
+          key={Math.random()}
+        >
+          {line}
+          {"\n"}
+        </span>
+      );
+    }
+    return (
+      <React.Fragment key={Math.random()}>
+        {line}
+        {"\n"}
+      </React.Fragment>
+    );
+  };
+
+  const renderProcessedLogs = (logs: string): JSX.Element[] => {
+    return logs.split("\n").map(processLogLine);
+  };
+
+  const formatTime = (totalSeconds: number): string => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+      2,
+      "0"
+    )}`;
+  };
+
+  useEffect(() => {
+    if (isDeploying) {
+      setElapsedTime(0);
+      timerIntervalRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 1);
+      }, 1000);
+    } else {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [isDeploying]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -647,8 +788,6 @@ const DeploymentForm = () => {
               {step === 3 && (
                 <div className={styles.stepContent}>
                   <div className={styles.reviewSection}>
-                    
-                    {/* Optional: Add CSS for this class */}
                     <Typography.h4>Review Your Configuration</Typography.h4>
                     <ul>
                       <li>
@@ -769,20 +908,74 @@ const DeploymentForm = () => {
           )}
         />
 
+        {finalDeploymentMessage && (
+          <div
+            className={`${styles.finalNotification} ${
+              finalDeploymentMessage.type === "success"
+                ? styles.finalSuccess
+                : styles.finalError
+            }`}
+            role="alert"
+          >
+            <strong>{finalDeploymentMessage.message}</strong>
+            {finalDeploymentMessage.details && (
+              <p>{finalDeploymentMessage.details}</p>
+            )}
+            <Button
+              icon="close"
+              title="Dismiss"
+              fillMode="flat"
+              themeColor={
+                finalDeploymentMessage.type === "success" ? "success" : "error"
+              }
+              onClick={() => setFinalDeploymentMessage(null)}
+              style={{
+                position: "absolute",
+                top: "5px",
+                right: "5px",
+                padding: "2px",
+              }}
+            />
+            <Button
+              title="Dismiss"
+              fillMode="flat"
+              themeColor={
+                finalDeploymentMessage.type === "success" ? "success" : "error"
+              }
+              onClick={() => setFinalDeploymentMessage(null)}
+              style={{
+                position: "absolute",
+                top: "5px",
+                right: "5px",
+                padding: "2px",
+              }}
+            >
+              x
+            </Button>
+          </div>
+        )}
+
         {(isDeploying || logOutput || deploymentResult?.error) && (
           <div ref={logContainerRef} className={styles.logsContainer}>
             <Typography.h4>Logs</Typography.h4>
             <pre className={styles.logsPre}>
-              {logOutput ||
-                (isDeploying ? (
-                  <span className={styles.logSpinner}></span>
-                ) : (
-                  ""
-                ))}
+              {logOutput ? (
+                renderProcessedLogs(logOutput)
+              ) : isDeploying ? (
+                <span className={styles.logSpinner}></span>
+              ) : (
+                ""
+              )}
             </pre>
           </div>
         )}
         <DeployedResourcesList />
+
+        {isDeploying && (
+          <div className={styles.timerDisplay}>
+            Elapsed Time: {formatTime(elapsedTime)}
+          </div>
+        )}
       </div>
     </>
   );
