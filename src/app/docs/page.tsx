@@ -161,47 +161,6 @@ pulumi config set s3BucketName my-local-test-bucket-\`pulumi stack --show-name\`
     `,
   },
   {
-    title: "Troubleshooting",
-    content: `
-<p>Here are some common issues you might encounter and how to address them:</p>
-<ul>
-    <li>
-        <strong>GitHub Actions Workflow Failures:</strong>
-        <ul>
-            <li><strong>Authentication Errors:</strong> Double-check that your GitHub secrets (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>PULUMI_ACCESS_TOKEN</code>) are correctly named and have the right values in your repository settings. Ensure the <code>GITHUB_TOKEN</code> used in <code>.env.local</code> (for local API testing) or server environment has the necessary permissions (e.g., <code>workflow</code> scope).</li>
-            <li><strong>Pulumi Command Errors:</strong> Check the detailed logs within the failed GitHub Actions run. Errors might relate to invalid AWS credentials, incorrect Pulumi configuration values (e.g., invalid resource names), AWS service limits, or issues in the Pulumi TypeScript code itself.</li>
-            <li><strong>Dependency Issues:</strong> Ensure <code>npm ci</code> or <code>npm install</code> ran successfully in the workflow within the <code>pulumi/</code> directory.</li>
-        </ul>
-    </li>
-    <li>
-        <strong>Pulumi Errors (Local or Workflow):</strong>
-        <ul>
-            <li><strong>Configuration Missing:</strong> Errors like "Missing required configuration variable 'X'" mean you need to set that variable using <code>pulumi config set X Y</code> for your current stack. Remember secrets need the <code>--secret</code> flag.</li>
-            <li><strong>AWS Permissions:</strong> Errors indicating insufficient permissions usually mean the AWS credentials used lack the necessary IAM policies to create/modify the specific resources (e.g., RDS, EKS, S3).</li>
-            <li><strong>Resource Naming Conflicts:</strong> AWS resource names (like S3 buckets, RDS identifiers) often need to be globally unique or unique within a region/account. Ensure names don't clash with existing resources. Using <code>\${pulumi.getStack()}</code> in names helps ensure uniqueness per stack.</li>
-            <li><strong>Invalid Input Errors:</strong> Check AWS documentation for naming rules and constraints for the specific resource type causing the error (e.g., character limits, allowed characters).</li>
-        </ul>
-    </li>
-    <li>
-        <strong>Next.js Application Issues:</strong>
-        <ul>
-            <li><strong>API Errors (500 Internal Server Error):</strong> Check the terminal where you ran <code>npm run dev</code> (or the Vercel function logs if deployed) for specific backend errors in the <code>/api/deploy</code> or <code>/api/logs</code> routes. Often related to missing environment variables (<code>GITHUB_TOKEN</code>) or problems communicating with the GitHub API.</li>
-            <li><strong>SSE Connection Errors / Timeouts:</strong> As noted, long-running infrastructure deployments might exceed serverless function execution limits (like on Vercel's free tier). Log streaming might stop prematurely. For long deployments, consider running the workflow directly from GitHub Actions or using a different hosting solution with longer timeouts.</li>
-            <li><strong>Frontend Form Validation Errors:</strong> Ensure user inputs match the expected format (e.g., lowercase letters only for User ID, valid characters for resource names).</li>
-        </ul>
-    </li>
-     <li>
-        <strong>AWS Resource Issues:</strong>
-        <ul>
-             <li><strong>RDS Stuck Creating/Modifying:</strong> This can sometimes happen due to networking misconfigurations (subnet groups, security groups not allowing access), parameter group issues, or insufficient instance resources. Check the RDS event logs in the AWS Console.</li>
-             <li><strong>EKS Cluster Creation Takes Long / Fails:</strong> EKS cluster provisioning is complex and can take 15-20 minutes or more. Failures often relate to IAM role permissions, VPC/subnet configuration, or capacity issues in the chosen region/AZs. Check CloudFormation events in the AWS Console (EKS uses CloudFormation under the hood).</li>
-        </ul>
-     </li>
-</ul>
-<p>Always refer to the detailed error messages provided in the terminal, GitHub Actions logs, Pulumi output, or AWS Console for the most specific information.</p>
-    `,
-  },
-  {
     title: "System Architecture",
     content: `
 Puluforge’s architecture is designed for modularity and scalability. The key components include:
@@ -675,6 +634,47 @@ if (doneData.success === true) {
     <li><strong>API Security:</strong> The backend API route (<code>/api/deploy</code>) securely interacts with the GitHub API using a server-side environment variable (<code>process.env.GITHUB_TOKEN</code>) to trigger the workflow. Direct access control to the API endpoint itself could be further enhanced using session validation from NextAuth.js if strict user login were enforced.</li>
     <li><strong>Network Isolation:</strong> Resources like the RDS database instances are configured to be private within the VPC (<code>publiclyAccessible: false</code>), reducing their exposure.</li>
 </ul>
+    `,
+  },
+  {
+    title: "Troubleshooting",
+    content: `
+<p>Here are some common issues you might encounter and how to address them:</p>
+<ul>
+    <li>
+        <strong>GitHub Actions Workflow Failures:</strong>
+        <ul>
+            <li><strong>Authentication Errors:</strong> Double-check that your GitHub secrets (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>PULUMI_ACCESS_TOKEN</code>) are correctly named and have the right values in your repository settings. Ensure the <code>GITHUB_TOKEN</code> used in <code>.env.local</code> (for local API testing) or server environment has the necessary permissions (e.g., <code>workflow</code> scope).</li>
+            <li><strong>Pulumi Command Errors:</strong> Check the detailed logs within the failed GitHub Actions run. Errors might relate to invalid AWS credentials, incorrect Pulumi configuration values (e.g., invalid resource names), AWS service limits, or issues in the Pulumi TypeScript code itself.</li>
+            <li><strong>Dependency Issues:</strong> Ensure <code>npm ci</code> or <code>npm install</code> ran successfully in the workflow within the <code>pulumi/</code> directory.</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Pulumi Errors (Local or Workflow):</strong>
+        <ul>
+            <li><strong>Configuration Missing:</strong> Errors like "Missing required configuration variable 'X'" mean you need to set that variable using <code>pulumi config set X Y</code> for your current stack. Remember secrets need the <code>--secret</code> flag.</li>
+            <li><strong>AWS Permissions:</strong> Errors indicating insufficient permissions usually mean the AWS credentials used lack the necessary IAM policies to create/modify the specific resources (e.g., RDS, EKS, S3).</li>
+            <li><strong>Resource Naming Conflicts:</strong> AWS resource names (like S3 buckets, RDS identifiers) often need to be globally unique or unique within a region/account. Ensure names don't clash with existing resources. Using <code>\${pulumi.getStack()}</code> in names helps ensure uniqueness per stack.</li>
+            <li><strong>Invalid Input Errors:</strong> Check AWS documentation for naming rules and constraints for the specific resource type causing the error (e.g., character limits, allowed characters).</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Next.js Application Issues:</strong>
+        <ul>
+            <li><strong>API Errors (500 Internal Server Error):</strong> Check the terminal where you ran <code>npm run dev</code> (or the Vercel function logs if deployed) for specific backend errors in the <code>/api/deploy</code> or <code>/api/logs</code> routes. Often related to missing environment variables (<code>GITHUB_TOKEN</code>) or problems communicating with the GitHub API.</li>
+            <li><strong>SSE Connection Errors / Timeouts:</strong> As noted, long-running infrastructure deployments might exceed serverless function execution limits (like on Vercel's free tier). Log streaming might stop prematurely. For long deployments, consider running the workflow directly from GitHub Actions or using a different hosting solution with longer timeouts.</li>
+            <li><strong>Frontend Form Validation Errors:</strong> Ensure user inputs match the expected format (e.g., lowercase letters only for User ID, valid characters for resource names).</li>
+        </ul>
+    </li>
+     <li>
+        <strong>AWS Resource Issues:</strong>
+        <ul>
+             <li><strong>RDS Stuck Creating/Modifying:</strong> This can sometimes happen due to networking misconfigurations (subnet groups, security groups not allowing access), parameter group issues, or insufficient instance resources. Check the RDS event logs in the AWS Console.</li>
+             <li><strong>EKS Cluster Creation Takes Long / Fails:</strong> EKS cluster provisioning is complex and can take 15-20 minutes or more. Failures often relate to IAM role permissions, VPC/subnet configuration, or capacity issues in the chosen region/AZs. Check CloudFormation events in the AWS Console (EKS uses CloudFormation under the hood).</li>
+        </ul>
+     </li>
+</ul>
+<p>Always refer to the detailed error messages provided in the terminal, GitHub Actions logs, Pulumi output, or AWS Console for the most specific information.</p>
     `,
   },
   {
