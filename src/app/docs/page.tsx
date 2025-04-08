@@ -168,51 +168,99 @@ if (config.getBoolean("createS3") === true) {
 }
 </code></pre></div>
 
-<strong>RDS Aurora MySQL Database Definition</strong>
-<p>If <code>createRDS</code> is true, an AWS RDS Aurora MySQL cluster and instance are provisioned. It reads the database details (name, username, password) from the <code>databases</code> configuration key (which is expected to be a JSON string containing an array).</p>
+</br>
+<strong>RDS MySQL Instance Definition</strong>
+<p>If <code>createRDS</code> is true, a standard AWS RDS MySQL instance is provisioned. It requires a secret configuration key named <code>databases</code>, which must contain a JSON string representing an array with at least one database object (containing <code>dbName</code>, <code>username</code>, and <code>password</code>). The code creates necessary networking (Subnet Group) and parameter groups before defining the instance itself.</p>
 <div class="code-block"><pre><code>
-let rdsEndpoint: pulumi.Output<string> | undefined;
+// Note: Outputs like rdsInstanceEndpoint/rdsInstancePort should be declared outside this block
 
 if (config.getBoolean("createRDS") === true) {
-  const rdsInstanceIdentifier = "database-pulumi";
-  const databasesRaw = config.get("databases") || "[]";
-  const databases = JSON.parse(databasesRaw);
+  console.log("RDS creation requested. Proceeding...");
 
-  if (databases.length > 0) {
-    const rdsCluster = new aws.rds.Cluster(
-      \`rds-cluster-\${rdsInstanceIdentifier}\`,
-      {
-        clusterIdentifier: rdsInstanceIdentifier,
-        engine: "aurora-mysql",
-        engineVersion: "8.0",
-        databaseName: databases[0].dbName,
-        masterUsername: databases[0].username,
-        masterPassword: databases[0].password,
-        skipFinalSnapshot: true,
-        applyImmediately: true,
-      },
-      { provider: awsProvider }
-    );
-    rdsEndpoint = rdsCluster.endpoint;
+  // Read DB details from a required secret config key expected to be JSON
+  const databasesSecretJson = config.requireSecret("databases");
 
-    // Creates instance(s) within the cluster
-    new aws.rds.ClusterInstance(
-      \`rds-instance-\${databases[0].dbName}\`, // Simplified example for one instance
-      {
-        identifier: \`\${rdsInstanceIdentifier}-\${databases[0].dbName}\`,
-        clusterIdentifier: rdsCluster.clusterIdentifier,
-        instanceClass: "db.t4g.micro",
-        engine: "aurora-mysql",
-        engineVersion: "8.0",
-        publiclyAccessible: false, // Instance is private
-        applyImmediately: true,
-      },
-      { provider: awsProvider }
-    );
-    // Parameter group setup also occurs here...
-  }
+  // Process the secret JSON securely using .apply()
+  const dbDetails = databasesSecretJson.apply((jsonString) => {
+    try {
+        const databases = JSON.parse(jsonString);
+        if (databases.length > 0 && databases[0].dbName && databases[0].username && databases[0].password) {
+            return {
+                dbName: databases[0].dbName as string,
+                dbUsername: databases[0].username as string,
+                dbPassword: pulumi.secret(databases[0].password), // Ensure password remains a secret Output
+                isValid: true,
+            };
+        }
+    } catch (e) { console.error("Failed to parse 'databases' secret JSON:", e); }
+    // Return dummy structure on failure to avoid runtime errors downstream
+    return { dbName: "", dbUsername: "", dbPassword: pulumi.secret(""), isValid: false };
+  });
+
+  dbDetails.apply(details => {
+      if (details.isValid) {
+          const stackName = pulumi.getStack();
+          const dbInstanceIdentifier = \`\${stackName}-db-instance\`;
+
+          // Networking: Create a Subnet Group using specific subnet IDs
+          const dbSubnetGroup = new aws.rds.SubnetGroup(\`\${stackName}-dbsubnetgroup\`, {
+              // Using hardcoded example subnet IDs from the provided code
+              subnetIds: ["subnet-0607d56e3d621b404", "subnet-02f60cf6daf7187d9"],
+              tags: { Name: \`\${stackName}-dbsubnetgroup\` },
+          }, { provider: awsProvider });
+
+          // Parameters: Create a Parameter Group for MySQL 8.0
+          const dbParameterGroup = new aws.rds.ParameterGroup(\`\${stackName}-dbparamgroup\`, {
+              family: "mysql8.0", // Parameter family for MySQL 8.0
+              parameters: [
+                  { name: "character_set_server", value: "utf8mb4" },
+                  { name: "character_set_client", value: "utf8mb4" },
+              ],
+              tags: { Name: \`\${stackName}-dbparamgroup\` },
+          }, { provider: awsProvider });
+
+          // Create the RDS Instance
+          const rdsInstance = new aws.rds.Instance(dbInstanceIdentifier, {
+              identifier: dbInstanceIdentifier,
+              engine: "mysql",
+              engineVersion: "8.0",
+              instanceClass: "db.t3.micro",
+              allocatedStorage: 20,
+              dbName: details.dbName,          // Use processed name
+              username: details.dbUsername,    // Use processed user
+              password: details.dbPassword,    // Pass the secret Output directly
+              dbSubnetGroupName: dbSubnetGroup.name,
+              parameterGroupName: dbParameterGroup.name,
+              // Using hardcoded example security group ID from the provided code
+              vpcSecurityGroupIds: ["sg-032569d223f9915df"],
+              multiAz: false,                 
+              publiclyAccessible: true,       
+              skipFinalSnapshot: true,        
+              applyImmediately: true,      
+              tags: { Name: dbInstanceIdentifier, Environment: stackName },
+          }, {
+              provider: awsProvider,
+              dependsOn: [dbSubnetGroup, dbParameterGroup] 
+          });
+
+          // Assign outputs (inside .apply ensures rdsInstance is created)
+          // These assume rdsInstanceEndpoint/rdsInstancePort are declared elsewhere (e.g., top level)
+          // Endpoint is split to get only the hostname
+          rdsInstanceEndpoint = rdsInstance.endpoint.apply(endpoint => endpoint.split(":")[0]);
+          rdsInstancePort = rdsInstance.port; // Port is a direct number Output
+
+          console.log(\`RDS Instance \${dbInstanceIdentifier} creation initiated.\`);
+      } else {
+         console.log("Skipping RDS creation due to invalid/missing 'databases' config.");
+      }
+  }); // End of dbDetails.apply
+
+} else {
+  console.log("RDS creation not requested.");
 }
 </code></pre></div>
+
+</br>
 
 <strong>EKS Cluster Definition</strong>
 <p>If <code>createEKS</code> is true, a Kubernetes cluster is created using the high-level <code>@pulumi/eks</code> component. This simplifies EKS setup significantly. Note that in this specific example, values like the VPC ID, subnet IDs, and instance profile name are hardcoded directly in the Pulumi code. For more flexibility, these could also be driven by configuration.</p>
