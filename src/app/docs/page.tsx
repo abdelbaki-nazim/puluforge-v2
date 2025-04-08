@@ -131,7 +131,8 @@ The infrastructure code for Puluforge resides within the <code>pulumi/</code> di
   {
     title: "Infrastructure Code (S3, RDS, EKS)",
     content: `
-  The core logic for defining the cloud infrastructure resides in the <code>pulumi/index.ts</code> file. This TypeScript code uses the Pulumi SDK to declare the desired state of resources in AWS.
+  <p> The core logic for defining the cloud infrastructure resides in the <code>pulumi/index.ts</code> file. This TypeScript code uses the Pulumi SDK to declare the desired state of resources in AWS.</p>
+
 <strong>Reading Configuration</strong>
 <p>The program starts by accessing configuration values passed to it during the deployment (typically via the GitHub Actions workflow). This includes AWS credentials and flags indicating which resources the user chose to create.</p>
 <div class="code-block"><pre><code>
@@ -149,6 +150,8 @@ const awsProvider = new aws.Provider("aws-provider", {
   region: awsRegion as aws.Region,
 });
 </code></pre></div>
+
+</br>
 <strong>Conditional Resource Creation</strong>
 <p>The code uses the configuration values (<code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>) to conditionally define resources. If a flag is set to <code>true</code>, the corresponding block of code executes, creating that resource.</p>
 <strong>S3 Bucket Definition</strong>
@@ -298,6 +301,7 @@ if (config.getBoolean("createEKS") === true) {
 }
 </code></pre></div>
 
+</br>
 <strong>Exporting Outputs</strong>
 <p>Finally, the program exports key pieces of information from the created resources (if any). These outputs, like the S3 bucket name, RDS endpoint, or EKS cluster name, are displayed by Pulumi upon successful completion of the deployment and can be used to connect to or manage the resources.</p>
 <div class="code-block"><pre><code>
@@ -311,8 +315,9 @@ export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
   {
     title: "Next.js API Integration with Pulumi Automation",
     content: `
-    The Puluforge Next.js application provides the user interface for requesting infrastructure and viewing deployment progress. Here's how it connects the user's choices to the automated Pulumi deployment via GitHub Actions:
+    <p>The Puluforge Next.js application provides the user interface for requesting infrastructure and viewing deployment progress. Here's how it connects the user's choices to the automated Pulumi deployment via GitHub Actions:</p>
 
+    </br>
 <strong>1. User Interface: The Multi-Step Form</strong>
 
 <p>When a user navigates to the <code>/dashboard</code> page, they are presented with a multi-step form (implemented in the <code>DeploymentForm</code> component) to specify their infrastructure needs:</p>
@@ -362,6 +367,7 @@ currentRunIdRef.current = responseData.runId;
 setupEventSource(responseData.runId, finalFormValues);
 </code></pre></div>
 
+</br>
 <strong>3. The Backend API Route: \`/api/deploy\`</strong>
 
 <p>This API route (defined in <code>pages/api/deploy.ts</code> or <code>app/api/deploy/route.ts</code>) acts as the bridge to GitHub Actions:</p>
@@ -433,8 +439,9 @@ if (doneData.success === true) {
   {
     title: "CI/CD Integration Using GitHub Actions",
     content: `
-This project uses a GitHub Actions workflow, located at <code>.github/workflows/deploy.yml</code>, to automatically deploy your AWS resources using Pulumi.
+<p>This project uses a GitHub Actions workflow, located at <code>.github/workflows/deploy.yml</code>, to automatically deploy your AWS resources using Pulumi.</p>
 
+</br>
 <strong>How it's Triggered:</strong>
 
 <p>The workflow is configured using GitHub's <code>workflow_dispatch</code> trigger. This type of trigger allows the workflow to be started in two main ways:</p>
@@ -494,8 +501,9 @@ This project uses a GitHub Actions workflow, located at <code>.github/workflows/
   {
     title: "Security, Authentication, and Multi-Tenancy",
     content: `
-Security and resource isolation are handled in Puluforge through several mechanisms:
+<p>Security and resource isolation are handled in Puluforge through several mechanisms:</p>
 
+</br>
 <ul>
     <li><strong>User Identification:</strong> While the application is set up with NextAuth.js for potential user authentication, the current demo version allows manual entry of a <code>userId</code>. This ID is crucial for separating resources.</li>
     <li><strong>Multi-Tenancy via Stacks:</strong> Resource isolation is achieved by creating a dedicated Pulumi stack for each deployment, named using the provided user ID (e.g., <code>user123-resources</code>). This ensures that one user's deployment doesn't interfere with another's.</li>
@@ -506,7 +514,7 @@ Security and resource isolation are handled in Puluforge through several mechani
     `,
   },
   {
-    title: "Future Enhancements and Conclusion",
+    title: "Future Enhancements",
     content: `
 <strong>Future Enhancements:</strong>
 
@@ -522,9 +530,6 @@ Security and resource isolation are handled in Puluforge through several mechani
     <li><strong>Monitoring & Alerting:</strong> Integrate monitoring for deployed resources (e.g., using AWS CloudWatch) and set up alerts for critical issues.</li>
     <li><strong>Multi-Account Deployments:</strong> Explore options to allow authenticated users to deploy resources into their own designated AWS accounts.</li>
 </ul>
-
-<strong>Conclusion:</strong><br/>
-Puluforge demonstrates a practical approach to building a self-service infrastructure platform. By combining a Next.js frontend and API with the power of Pulumi for infrastructure definition and GitHub Actions for orchestration, it enables users to request and manage AWS resources like S3, RDS, and EKS through a simplified interface. This documentation outlines the current setup and provides a clear path for future improvements and scaling.
     `,
   },
 ];
