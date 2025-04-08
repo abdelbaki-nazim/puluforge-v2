@@ -389,7 +389,7 @@ if (config.getBoolean("createRDS") === true) {
 </br>
 
 <strong>EKS Cluster Definition</strong>
-<p>If <code>createEKS</code> is true, a Kubernetes cluster is created using the high-level <code>@pulumi/eks</code> component. This simplifies EKS setup significantly. Note that in this specific example, values like the VPC ID, subnet IDs, and instance profile name are hardcoded directly in the Pulumi code. For more flexibility, these could also be driven by configuration.</p>
+<p>If <code>createEKS</code> is true, a Kubernetes cluster is created using the high-level <code>@pulumi/eks</code> component. This simplifies EKS setup significantly. Note that in this specific example, values like the VPC ID, subnet IDs, and instance profile name are hardcoded directly in the Pulumi code.</p>
 <div class="code-block"><pre>
 <code>import * as eks from "@pulumi/eks";
 // ... other imports and config reading
@@ -397,30 +397,40 @@ if (config.getBoolean("createRDS") === true) {
 let eksClusterOutput: pulumi.Output<string> | undefined;
 
 if (config.getBoolean("createEKS") === true) {
-  const eksClusterName = config.get("clusterName") || "default-eks-cluster"; // Reads name from config
-  const eksK8sVersion = config.get("eksK8sVersion") || "1.31";
+  config.get("clusterName") || \`$\{pulumi.getStack()}-eks-cluster\`;
+  const eksInstanceType = "t3.medium";
+  const eksDesiredCapacity = 2;
+  const eksMinSize = 1;
+  const eksMaxSize = 3;
+  const eksK8sVersion = "1.31";
 
-  const nodeInstanceProfile = new aws.iam.InstanceProfile(/* ... configuration ... */);
+  const vpcId = "vpc-0e4c18d71fea58af1";
 
   const cluster = new eks.Cluster(
     "eksCluster",
-    {
-      name: eksClusterName,
-      version: eksK8sVersion,
-      vpcId: "vpc-04a0161c3cefe5035", // Hardcoded VPC
-      publicSubnetIds: [ /* Subnet IDs */ ],
-      nodeGroupOptions: {
-        instanceProfileName: nodeInstanceProfile.name,
-        instanceType: "t3.medium",
-        desiredCapacity: 2,
-        minSize: 1,
-        maxSize: 3,
+     {
+        name: eksClusterName,
+        version: eksK8sVersion,
+        vpcId: vpcId,
+        publicSubnetIds: [
+          "subnet-ID1",
+          "subnet-ID2",
+          "subnet-ID3",
+        ],
+        nodeGroupOptions: {
+          instanceType: eksInstanceType,
+          desiredCapacity: eksDesiredCapacity,
+          minSize: eksMinSize,
+          maxSize: eksMaxSize,
+        },
+        tags: {
+          Name: eksClusterName,
+          Environment: pulumi.getStack(),
+        },
       },
-      // ... other options
-    },
     { provider: awsProvider }
   );
-  eksClusterOutput = cluster.eksCluster.name;
+....
 }
 </code></pre></div>
 
@@ -428,8 +438,15 @@ if (config.getBoolean("createEKS") === true) {
 <strong>Exporting Outputs</strong>
 <p>Finally, the program exports key pieces of information from the created resources (if any). These outputs, like the S3 bucket name, RDS endpoint, or EKS cluster name, are displayed by Pulumi upon successful completion of the deployment and can be used to connect to or manage the resources.</p>
 <div class="code-block"><pre>
-<code>export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
-</code></pre></div>
+<code>export let eksClusterOutput: pulumi.Output<string> | undefined;
+</code> 
+<code>export let rdsInstanceEndpoint: pulumi.Output<string> | undefined;
+</code>
+<code>export let rdsInstancePort: pulumi.Output<number> | undefined;
+</code>
+<code>export let s3BucketOutput: pulumi.Output<string> | undefined;
+</code>
+</pre></div>
 
 <p>This <code>index.ts</code> file, combined with the configuration passed by the GitHub Actions workflow, defines precisely what infrastructure Puluforge will manage in AWS based on user requests.</p>
 
