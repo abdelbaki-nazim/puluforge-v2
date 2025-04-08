@@ -37,6 +37,171 @@ const steps = [
     `,
   },
   {
+    title: "Prerequisites (local development)",
+    content: `
+<p>Before you can effectively run, test, or contribute to the Puluforge project locally, ensure you have the following tools and accounts set up:</p>
+<ul>
+  <li>
+    <strong>Node.js and npm/yarn:</strong> Puluforge's frontend (Next.js) and infrastructure code (Pulumi TypeScript) rely on Node.js.
+    <ul>
+      <li>Install Node.js (which includes npm) from the <a href="https://nodejs.org/" target="_blank" rel="noopener noreferrer">official Node.js website</a>. Version 18 or later is recommended, matching the GitHub Action environment.</li>
+      <li>Verify installation by running <code>node -v</code> and <code>npm -v</code> in your terminal.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>AWS Account:</strong> You need an active AWS account to provision the cloud resources (S3, RDS, EKS).
+    <ul>
+      <li>If you don't have one, sign up at <a href="https://aws.amazon.com/" target="_blank" rel="noopener noreferrer">aws.amazon.com</a>.</li>
+      <li>Be mindful of potential costs associated with created resources, especially outside the AWS Free Tier.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>AWS CLI:</strong> While Pulumi interacts with AWS directly, the AWS CLI is essential for configuring credentials easily and performing manual checks.
+    <ul>
+      <li>Install following the <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" target="_blank" rel="noopener noreferrer">official AWS CLI installation guide</a>.</li>
+      <li>Verify installation: <code>aws --version</code>.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>Configured AWS Credentials:</strong> Pulumi needs credentials to manage resources in your AWS account. The recommended way locally is via AWS CLI configuration.
+    <ul>
+      <li>Run <code>aws configure</code> in your terminal and provide your AWS Access Key ID, Secret Access Key, default region (e.g., <code>us-east-1</code>), and default output format (e.g., <code>json</code>).</li>
+      <li>This creates credential and config files (usually in <code>~/.aws/</code>) that Pulumi can automatically detect.</li>
+      <li>Alternatively, you can use <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html" target="_blank" rel="noopener noreferrer">environment variables</a> (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_REGION</code>), but configuring profiles is generally preferred for local development.</li>
+    </ul>
+  </li>
+    <li>
+    <strong>Pulumi Account & CLI:</strong> Pulumi uses its service (Pulumi Cloud by default) to manage deployment state files. You need an account and the CLI.
+    <ul>
+      <li>Sign up for a free account at <a href="https://app.pulumi.com/" target="_blank" rel="noopener noreferrer">app.pulumi.com</a>.</li>
+      <li>Install the Pulumi CLI following the <a href="https://www.pulumi.com/docs/install/" target="_blank" rel="noopener noreferrer">official Pulumi installation guide</a>.</li>
+      <li>Verify installation: <code>pulumi version</code>.</li>
+      <li>Log in to your Pulumi account using the CLI: <code>pulumi login</code> (this will typically open a browser window for authentication).</li>
+    </ul>
+  </li>
+   <li>
+    <strong>Git & GitHub Account:</strong> You need Git installed to clone the repository and a GitHub account to access the repository and potentially set up secrets if you fork it.
+    <ul>
+        <li>Install Git from <a href="https://git-scm.com/downloads" target="_blank" rel="noopener noreferrer">git-scm.com</a>.</li>
+        <li>Verify installation: <code>git --version</code>.</li>
+        <li>Sign up at <a href="https://github.com/" target="_blank" rel="noopener noreferrer">github.com</a> if you don't have an account.</li>
+    </ul>
+   </li>
+</ul>
+<p>Having these prerequisites met will allow you to run the Pulumi code locally for testing or development purposes, independent of the full Puluforge application if needed.</p>
+    `,
+  },
+  {
+    title: "GitHub Setup & Local Development",
+    content: `
+<p>To run the Puluforge application locally for testing or development, follow these steps after ensuring you meet all the <a href="#Prerequisites">Prerequisites</a>:</p>
+
+<strong>1. Clone the Repository:</strong>
+<p>Use Git to clone the project repository to your local machine:</p>
+<div class="code-block"><pre>
+<code>git clone https://github.com/abdelbaki-nazim/workflows.git
+cd workflows
+</code></pre></div>
+
+</br>
+<strong>2. Install Dependencies:</strong>
+<p>The project has two sets of Node.js dependencies: one for the Next.js application (root) and one for the Pulumi infrastructure code (<code>pulumi/</code> directory).</p>
+<div class="code-block"><pre>
+<code># Install dependencies for the Next.js application
+npm install
+
+# Install dependencies for the Pulumi project
+cd pulumi
+npm install
+cd ..
+</code></pre></div>
+<p>Using <code>npm ci</code> instead of <code>npm install</code> is recommended if <code>package-lock.json</code> files are present and up-to-date, as it provides faster, more reliable builds for CI/CD or consistent environments.</p>
+
+<strong>3. Configure Environment Variables (Next.js):</strong>
+<p>The Next.js backend API requires a GitHub Personal Access Token (PAT) to trigger the deployment workflow. Create a <code>.env.local</code> file in the root directory of the cloned project (the same level as <code>package.json</code>) and add your token:</p>
+<div class="code-block"><pre>
+<code># .env.local
+GITHUB_TOKEN=****
+# Add any other environment variables needed by NextAuth.js if you implement it
+</code></pre></div>
+
+</br>
+<p><strong>Important:</strong> Ensure your GitHub PAT has the necessary scopes, typically including <code>repo</code> (to access repository details and trigger workflows) or at least <code>workflow</code>.</p>
+<p><strong>Never commit your <code>.env.local</code> file to Git.</strong> The <code>.gitignore</code> file should already list it.</p>
+
+<strong>4. Run the Next.js Development Server:</strong>
+<p>Start the Puluforge web application:</p>
+<div class="code-block"><pre>
+<code>npm run dev
+</code></pre></div>
+<p>Open your browser and navigate to <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">http://localhost:3000</a> (or the port specified in your terminal). You should see the Puluforge UI.</p>
+
+<strong>5. Running Pulumi Locally (Optional):</strong>
+<p>If you want to test or modify the infrastructure code directly without using the web UI and GitHub Actions:</p>
+<ul>
+    <li>Navigate to the Pulumi project directory: <code>cd pulumi</code></li>
+    <li>Ensure you are logged into Pulumi (<code>pulumi login</code>) and your AWS credentials are configured correctly (e.g., via <code>aws configure</code>).</li>
+    <li>Select a stack: <code>pulumi stack select dev</code> (or create one with <code>pulumi stack init dev</code>).</li>
+    <li>Set required configuration manually for that stack:
+        <div class="code-block"><pre>
+        <code>pulumi config set aws:region us-east-1 # Or your desired region
+pulumi config set createS3 true
+pulumi config set s3BucketName my-local-test-bucket-\`pulumi stack --show-name\`
+# Set other required config (like 'databases' secret) as needed for your test
+# Example for setting the 'databases' secret:
+# pulumi config set --secret databases '[{"dbName":"testdb","username":"testuser","password":"TestPassword123"}]'
+        </code></pre></div>
+    </li>
+    <li>Preview changes: <code>pulumi preview</code></li>
+    <li>Deploy changes: <code>pulumi up</code></li>
+    <li>Destroy resources when finished: <code>pulumi destroy</code></li>
+    <li>Remove the stack if desired: <code>pulumi stack rm dev</code></li>
+</ul>
+<p>Running Pulumi locally is useful for rapid iteration on the infrastructure code itself.</p>
+    `,
+  },
+  {
+    title: "Troubleshooting",
+    content: `
+<p>Here are some common issues you might encounter and how to address them:</p>
+<ul>
+    <li>
+        <strong>GitHub Actions Workflow Failures:</strong>
+        <ul>
+            <li><strong>Authentication Errors:</strong> Double-check that your GitHub secrets (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>PULUMI_ACCESS_TOKEN</code>) are correctly named and have the right values in your repository settings. Ensure the <code>GITHUB_TOKEN</code> used in <code>.env.local</code> (for local API testing) or server environment has the necessary permissions (e.g., <code>workflow</code> scope).</li>
+            <li><strong>Pulumi Command Errors:</strong> Check the detailed logs within the failed GitHub Actions run. Errors might relate to invalid AWS credentials, incorrect Pulumi configuration values (e.g., invalid resource names), AWS service limits, or issues in the Pulumi TypeScript code itself.</li>
+            <li><strong>Dependency Issues:</strong> Ensure <code>npm ci</code> or <code>npm install</code> ran successfully in the workflow within the <code>pulumi/</code> directory.</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Pulumi Errors (Local or Workflow):</strong>
+        <ul>
+            <li><strong>Configuration Missing:</strong> Errors like "Missing required configuration variable 'X'" mean you need to set that variable using <code>pulumi config set X Y</code> for your current stack. Remember secrets need the <code>--secret</code> flag.</li>
+            <li><strong>AWS Permissions:</strong> Errors indicating insufficient permissions usually mean the AWS credentials used lack the necessary IAM policies to create/modify the specific resources (e.g., RDS, EKS, S3).</li>
+            <li><strong>Resource Naming Conflicts:</strong> AWS resource names (like S3 buckets, RDS identifiers) often need to be globally unique or unique within a region/account. Ensure names don't clash with existing resources. Using <code>\${pulumi.getStack()}</code> in names helps ensure uniqueness per stack.</li>
+            <li><strong>Invalid Input Errors:</strong> Check AWS documentation for naming rules and constraints for the specific resource type causing the error (e.g., character limits, allowed characters).</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Next.js Application Issues:</strong>
+        <ul>
+            <li><strong>API Errors (500 Internal Server Error):</strong> Check the terminal where you ran <code>npm run dev</code> (or the Vercel function logs if deployed) for specific backend errors in the <code>/api/deploy</code> or <code>/api/logs</code> routes. Often related to missing environment variables (<code>GITHUB_TOKEN</code>) or problems communicating with the GitHub API.</li>
+            <li><strong>SSE Connection Errors / Timeouts:</strong> As noted, long-running infrastructure deployments might exceed serverless function execution limits (like on Vercel's free tier). Log streaming might stop prematurely. For long deployments, consider running the workflow directly from GitHub Actions or using a different hosting solution with longer timeouts.</li>
+            <li><strong>Frontend Form Validation Errors:</strong> Ensure user inputs match the expected format (e.g., lowercase letters only for User ID, valid characters for resource names).</li>
+        </ul>
+    </li>
+     <li>
+        <strong>AWS Resource Issues:</strong>
+        <ul>
+             <li><strong>RDS Stuck Creating/Modifying:</strong> This can sometimes happen due to networking misconfigurations (subnet groups, security groups not allowing access), parameter group issues, or insufficient instance resources. Check the RDS event logs in the AWS Console.</li>
+             <li><strong>EKS Cluster Creation Takes Long / Fails:</strong> EKS cluster provisioning is complex and can take 15-20 minutes or more. Failures often relate to IAM role permissions, VPC/subnet configuration, or capacity issues in the chosen region/AZs. Check CloudFormation events in the AWS Console (EKS uses CloudFormation under the hood).</li>
+        </ul>
+     </li>
+</ul>
+<p>Always refer to the detailed error messages provided in the terminal, GitHub Actions logs, Pulumi output, or AWS Console for the most specific information.</p>
+    `,
+  },
+  {
     title: "System Architecture",
     content: `
 Puluforge’s architecture is designed for modularity and scalability. The key components include:
@@ -96,8 +261,8 @@ The infrastructure code for Puluforge resides within the <code>pulumi/</code> di
     
     <strong>2. Setting Configuration During Deployment:</strong>
     <p>The <code>.github/workflows/deploy.yml</code> workflow takes these secrets and inputs and uses the <code>pulumi config set</code> command internally right before deploying. For example, it runs commands like:</p>
-    <div class="code-block"><pre><code>
-    # Inside the GitHub Actions workflow run:
+    <div class="code-block"><pre>
+    <code># Inside the GitHub Actions workflow run:
     pulumi config set awsAccessKey $AWS_ACCESS_KEY_ID
     pulumi config set awsSecretKey $AWS_SECRET_ACCESS_KEY --secret
     pulumi config set awsRegion $AWS_REGION
@@ -108,9 +273,8 @@ The infrastructure code for Puluforge resides within the <code>pulumi/</code> di
     
     <strong>3. Accessing Configuration in Code:</strong>
     <p>The <code>pulumi/index.ts</code> code then reads this configuration using the <code>pulumi.Config</code> class to access AWS keys, determine which resources to create, and get specific names or settings:</p>
-    <div class="code-block"><pre><code>
-    const config = new pulumi.Config();
-    
+    <div class="code-block"><pre>
+    <code>const config = new pulumi.Config();
     // Example: Reading AWS credentials (set by the workflow)
     const awsAccessKey = config.require("awsAccessKey");
     const awsSecretKey = config.requireSecret("awsSecretKey");
@@ -135,8 +299,8 @@ The infrastructure code for Puluforge resides within the <code>pulumi/</code> di
 
 <strong>Reading Configuration</strong>
 <p>The program starts by accessing configuration values passed to it during the deployment (typically via the GitHub Actions workflow). This includes AWS credentials and flags indicating which resources the user chose to create.</p>
-<div class="code-block"><pre><code>
-import * as pulumi from "@pulumi/pulumi";
+<div class="code-block"><pre>
+<code>import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 // ... other imports
 const config = new pulumi.Config();
@@ -156,8 +320,8 @@ const awsProvider = new aws.Provider("aws-provider", {
 <p>The code uses the configuration values (<code>createS3</code>, <code>createRDS</code>, <code>createEKS</code>) to conditionally define resources. If a flag is set to <code>true</code>, the corresponding block of code executes, creating that resource.</p>
 <strong>S3 Bucket Definition</strong>
 <p>If <code>createS3</code> is true, an S3 bucket is created. The bucket name is taken from the configuration (<code>s3BucketName</code>) if provided, otherwise, a default name is used.</p>
-<div class="code-block"><pre><code>
-let s3BucketOutput: pulumi.Output<string> | undefined;
+<div class="code-block"><pre>
+<code>let s3BucketOutput: pulumi.Output<string> | undefined;
 if (config.getBoolean("createS3") === true) {
   const s3BucketName = config.get("s3BucketName") || "default-s3-bucket";
   const bucket = new aws.s3.Bucket(
@@ -174,8 +338,8 @@ if (config.getBoolean("createS3") === true) {
 </br>
 <strong>RDS MySQL Instance Definition</strong>
 <p>If <code>createRDS</code> is true, a standard AWS RDS MySQL instance is provisioned. It requires a secret configuration key named <code>databases</code>, which must contain a JSON string representing an array with at least one database object (containing <code>dbName</code>, <code>username</code>, and <code>password</code>). The code creates necessary networking (Subnet Group) and parameter groups before defining the instance itself.</p>
-<div class="code-block"><pre><code>
-// Note: Outputs like rdsInstanceEndpoint/rdsInstancePort should be declared outside this block
+<div class="code-block"><pre>
+<code>// Note: Outputs like rdsInstanceEndpoint/rdsInstancePort should be declared outside this block
 
 if (config.getBoolean("createRDS") === true) {
   console.log("RDS creation requested. Proceeding...");
@@ -267,8 +431,8 @@ if (config.getBoolean("createRDS") === true) {
 
 <strong>EKS Cluster Definition</strong>
 <p>If <code>createEKS</code> is true, a Kubernetes cluster is created using the high-level <code>@pulumi/eks</code> component. This simplifies EKS setup significantly. Note that in this specific example, values like the VPC ID, subnet IDs, and instance profile name are hardcoded directly in the Pulumi code. For more flexibility, these could also be driven by configuration.</p>
-<div class="code-block"><pre><code>
-import * as eks from "@pulumi/eks";
+<div class="code-block"><pre>
+<code>import * as eks from "@pulumi/eks";
 // ... other imports and config reading
 
 let eksClusterOutput: pulumi.Output<string> | undefined;
@@ -304,8 +468,8 @@ if (config.getBoolean("createEKS") === true) {
 </br>
 <strong>Exporting Outputs</strong>
 <p>Finally, the program exports key pieces of information from the created resources (if any). These outputs, like the S3 bucket name, RDS endpoint, or EKS cluster name, are displayed by Pulumi upon successful completion of the deployment and can be used to connect to or manage the resources.</p>
-<div class="code-block"><pre><code>
-export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
+<div class="code-block"><pre>
+<code>export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
 </code></pre></div>
 
 <p>This <code>index.ts</code> file, combined with the configuration passed by the GitHub Actions workflow, defines precisely what infrastructure Puluforge will manage in AWS based on user requests.</p>
@@ -340,8 +504,8 @@ export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
 <strong>2. Triggering the Deployment (Frontend to API)</strong>
 
 <p>Upon form submission, the <code>handleSubmit</code> function in the <code>DeploymentForm</code> component gathers all the user inputs into a structure like this:</p>
-<div class="code-block"><pre><code>
-{
+<div class="code-block"><pre>
+<code>{
   userId: "user123",
   createS3: true,
   createRDS: false,
@@ -353,8 +517,8 @@ export { s3BucketOutput, rdsEndpoint, eksClusterOutput };
 </code></pre></div>
 
 <p>It then sends this data to a Next.js API route (<code>/api/deploy</code>) using a POST request:</p>
-<div class="code-block"><pre><code>
-// Inside handleSubmit in DeploymentForm.tsx
+<div class="code-block"><pre>
+<code>// Inside handleSubmit in DeploymentForm.tsx
 const res = await fetch("/api/deploy", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -375,8 +539,8 @@ setupEventSource(responseData.runId, finalFormValues);
     <li>It receives the form data from the frontend request.</li>
     <li>It extracts the necessary details (userId, resource flags, names).</li>
     <li>Crucially, it uses the GitHub REST API to programmatically trigger the <code>deploy.yml</code> workflow we discussed earlier. It sends the form data as \`inputs\` to the workflow. This requires a GitHub Personal Access Token (PAT) stored securely as an environment variable (<code>process.env.GITHUB_TOKEN</code>) on the server.</li>
-    <div class="code-block"><pre><code>
-// Inside /api/deploy route handler
+    <div class="code-block"><pre>
+    <code>// Inside /api/deploy route handler
 const DISPATCH_URL = "https://api.github.com/repos/.../deploy.yml/dispatches";
 const dispatchRes = await fetch(DISPATCH_URL, {
   method: "POST",
@@ -400,8 +564,8 @@ const dispatchRes = await fetch(DISPATCH_URL, {
 <p>Once the frontend receives the <code>runId</code>, it needs to show the user the deployment progress. This is achieved using Server-Sent Events (SSE) and another API route (<code>/api/logs</code>):</p>
 <ul>
     <li><strong>Frontend Connection:</strong> The frontend's <code>setupEventSource</code> function creates an <code>EventSource</code> connection to <code>/api/logs?runId={runId}</code>.</li>
-    <div class="code-block"><pre><code>
-// Inside setupEventSource in DeploymentForm.tsx
+    <div class="code-block"><pre>
+    <code>// Inside setupEventSource in DeploymentForm.tsx
 const es = new EventSource(\`/api/logs?runId=\${runId}\`);
 eventSourceRef.current = es;
 
@@ -425,8 +589,8 @@ es.addEventListener("error", (event) => { /* Handle errors */ });
 
 <strong>5. Storing Results</strong>
 <p>Upon successful completion (indicated by the 'done' SSE event with a success status), the frontend saves key details about the deployment (like the user ID, stack name, run ID, and requested resources) into the browser's local storage for potential future reference.</p>
-<div class="code-block"><pre><code>
-// Inside the 'done' event listener in setupEventSource
+<div class="code-block"><pre>
+<code>// Inside the 'done' event listener in setupEventSource
 if (doneData.success === true) {
   // ... prepare deployment data ...
   saveDeploymentToLocalStorage(deploymentToStore);
