@@ -1,4 +1,4 @@
-# puluForge
+# PuluForge
 
 > An open-source project for streamlined DevOps & cloud automation.
 
